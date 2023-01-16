@@ -184,20 +184,28 @@ async def order(order_info: MarketOrder, background_tasks: BackgroundTasks):
                 # 어떤 베이스인지 찾아서 isExist를 False로 바꿔줘야함
                 if order_info.base == baseLong1:
                     isExistLong1 = False
+                    baseLong1 = ""
                 if order_info.base == baseLong2:
                     isExistLong2 = False                
+                    baseLong2 = ""
                 if order_info.base == baseLong3:
                     isExistLong3 = False
+                    baseLong3 = ""
                 if order_info.base == baseLong4:
                     isExistLong4 = False
+                    baseLong4 = ""
                 if order_info.base == baseShort1:
                     isExistShort1 = False
+                    baseShort1 = ""
                 if order_info.base == baseShort2:
                     isExistShort2 = False
+                    baseShort2 = ""
                 if order_info.base == baseShort3:
                     isExistShort3 = False
+                    baseShort3 = ""
                 if order_info.base == baseShort4:
                     isExistShort4 = False      
+                    baseShort4 = ""
                                   
             background_tasks.add_task(log, exchange_name, result, order_info)
         elif exchange_name in ("KRX", "NASDAQ", "NYSE", "AMEX"):
