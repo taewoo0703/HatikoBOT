@@ -103,8 +103,32 @@ baseShort2 = ""
 baseShort3 = ""
 baseShort4 = ""
 
-@ app.post("/order")
-async def order(order_info: MarketOrder, background_tasks: BackgroundTasks):
+
+
+@ app.get("/hatikoinfo")
+async def hatikoinfo():
+    res = {
+        "isExistLong1" : isExistLong1,
+        "isExistLong2" : isExistLong2,
+        "isExistLong3" : isExistLong3,
+        "isExistLong4" : isExistLong4,
+        "isExistShort1" : isExistShort1,
+        "isExistShort2" : isExistShort2,
+        "isExistShort3" : isExistShort3,
+        "isExistShort4" : isExistShort4,
+        "baseLong1" : baseLong1,
+        "baseLong2" : baseLong2,
+        "baseLong3" : baseLong3,
+        "baseLong4" : baseLong4,
+        "baseShort1" : baseShort1,
+        "baseShort2" : baseShort2,
+        "baseShort3" : baseShort3,
+        "baseShort4" : baseShort4,
+        }
+    return res
+
+@ app.post("/hatiko")
+async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
     global isExistLong1, isExistLong2, isExistLong3, isExistLong4
     global isExistShort1, isExistShort2, isExistShort3, isExistShort4
     global baseLong1, baseLong2, baseLong3, baseLong4
@@ -207,6 +231,47 @@ async def order(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     isExistShort4 = False      
                     baseShort4 = ""
                                   
+            background_tasks.add_task(log, exchange_name, result, order_info)
+        elif exchange_name in ("KRX", "NASDAQ", "NYSE", "AMEX"):
+            kis: KoreaInvestment = exchange
+            result = kis.create_order(order_info.exchange, order_info.base, order_info.type.lower(), order_info.side.lower(), order_info.amount)
+            background_tasks.add_task(log, exchange_name, result, order_info)
+
+    except TypeError:
+        background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
+    except Exception:
+        background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
+        log_alert_message(order_info)
+
+    else:
+        return {"result": "success"}
+
+    finally:
+        pass
+
+
+@ app.post("/order")
+async def order(order_info: MarketOrder, background_tasks: BackgroundTasks):
+    result = None
+    try:
+        exchange_name = order_info.exchange.upper()
+        exchange = get_exchange(exchange_name, order_info.kis_number)
+        if exchange_name in ("BINANCE", "UPBIT", "BYBIT", "BITGET"):
+            bot = exchange.dict()[order_info.exchange]
+            bot.order_info = order_info
+            if order_info.side == "buy":
+                result = bot.market_buy(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent)
+            elif order_info.side == "sell":
+                result = bot.market_sell(order_info.base, order_info.quote, order_info.type,
+                                         order_info.side, order_info.amount, order_info.price, order_info.percent)
+            elif order_info.side.startswith("entry/"):
+                if order_info.stop_price and order_info.profit_price:
+                    result = bot.market_sltp_order(order_info.base, order_info.quote, order_info.type,
+                                                   order_info.side, order_info.amount, order_info.stop_price, order_info.profit_price)
+                else:
+                    result = bot.market_entry(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent, order_info.leverage)
+            elif order_info.side.startswith("close/"):
+                result = bot.market_close(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent)
             background_tasks.add_task(log, exchange_name, result, order_info)
         elif exchange_name in ("KRX", "NASDAQ", "NYSE", "AMEX"):
             kis: KoreaInvestment = exchange
