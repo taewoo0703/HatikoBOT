@@ -157,6 +157,8 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
         if order_info.side.startswith("close/"):
             if order_info.base not in [baseLong1, baseLong2, baseLong3, baseLong4, baseShort1, baseShort2, baseShort3, baseShort4]:
                 return {"result" : "ignore"}
+            if order_info.order_name in ["TakeProfitS2", "TakeProfitS3", "TakeProfitS4", "TakeProfitL2", "TakeProfitL3", "TakeProfitL4"]:
+                return {"result" : "ignore"}
 
         exchange_name = order_info.exchange.upper()
         exchange = get_exchange(exchange_name, order_info.kis_number)
