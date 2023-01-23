@@ -101,7 +101,18 @@ class Binance:
         entry_amount = self.get_amount(base, quote, amount, entry_percent)
         if leverage is not None:
             self.set_leverage(leverage, symbol)
-        return self.future.create_order(symbol, type.lower(), side, abs(entry_amount))
+        # 시장가를 지정가로 변환 by PTW
+        if type == "market":
+            # 슬리피지 0.8프로 짜리 지정가로 변환
+            current_price = self.fetch_price(base, quote)
+            slipage = 0.8
+            if side == "buy":
+                entry_price = current_price * (1 + slipage / 100)
+            if side == "sell":
+                entry_price = current_price * (1 - slipage / 100)
+            return self.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
+        else:
+            return self.future.create_order(symbol, type.lower(), side, abs(entry_amount))
 
     # def market_stop_order(self, base: str, quote: str, type: str, side: str, amount: float, price: float, stop_price: float):
     #     symbol = f"{base}/{quote}"
@@ -143,7 +154,18 @@ class Binance:
         side = self.parse_side(side)
         quote = self.parse_quote(quote)
         close_amount = self.get_amount(base, quote, amount, close_percent)
-        return self.future.create_order(symbol, type.lower(), side, close_amount, params={"reduceOnly": True})
+        # 시장가를 지정가로 변환 by PTW
+        if type == "market":
+            # 슬리피지 0.8프로 짜리 지정가로 변환
+            current_price = self.fetch_price(base, quote)
+            slipage = 0.8
+            if side == "buy":
+                close_price = current_price * (1 + slipage / 100)
+            if side == "sell":
+                close_price = current_price * (1 - slipage / 100)
+            return self.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+        else:
+            return self.future.create_order(symbol, type.lower(), side, close_amount, params={"reduceOnly": True})
 
     async def market_close_async(self, base: str, quote: str, type: str, side: str, amount: float = None, price: str = None, close_percent: str = None):
         symbol = self.parse_symbol(base, quote)
