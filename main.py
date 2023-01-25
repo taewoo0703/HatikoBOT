@@ -196,11 +196,16 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         max_amount = 2
                         # Set nGoal
-                        nGoal = total_amount // max_amount + 1
-                        entry_amount_list = []  # 예: [max_amount, max_mount, 나머지] 이런식
-                        for i in range(nGoal - 1):
-                            entry_amount_list.append(max_amount)
-                        entry_amount_list.append(total_amount % max_amount)
+                        entry_amount_list = []
+                        if (total_amount % max_amount == 0):
+                            nGoal = total_amount // max_amount
+                            for i in range(nGoal):
+                                entry_amount_list.append(max_amount)
+                        else:
+                            nGoal = total_amount // max_amount + 1
+                            for i in range(nGoal - 1):
+                                entry_amount_list.append(max_amount)
+                            entry_amount_list.append(total_amount % max_amount)
                         # 시장가를 지정가로 변환
                         # 슬리피지 0.8프로 짜리 지정가로 변환
                         current_price = bot.fetch_price(order_info.base, quote)
@@ -261,11 +266,16 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                     max_amount = 2
                     # Set nGoal
-                    nGoal = total_amount // max_amount + 1
-                    close_amount_list = []  # 예: [max_amount, max_mount, 나머지] 이런식
-                    for i in range(nGoal - 1):
-                        close_amount_list.append(max_amount)
-                    close_amount_list.append(total_amount % max_amount)
+                    close_amount_list = []
+                    if (total_amount % max_amount == 0):
+                        nGoal = total_amount // max_amount
+                        for i in range(nGoal):
+                            close_amount_list.append(max_amount)
+                    else:
+                        nGoal = total_amount // max_amount + 1
+                        for i in range(nGoal - 1):
+                            close_amount_list.append(max_amount)
+                        close_amount_list.append(total_amount % max_amount)
                     # 시장가를 지정가로 변환
                     # 슬리피지 0.8프로 짜리 지정가로 변환
                     current_price = bot.fetch_price(order_info.base, quote)
