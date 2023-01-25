@@ -199,11 +199,11 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         entry_amount_list = []
                         if (total_amount % max_amount == 0):
                             nGoal = total_amount // max_amount
-                            for i in range(nGoal):
+                            for i in range(int(nGoal)):
                                 entry_amount_list.append(max_amount)
                         else:
                             nGoal = total_amount // max_amount + 1
-                            for i in range(nGoal - 1):
+                            for i in range(int(nGoal - 1)):
                                 entry_amount_list.append(max_amount)
                             entry_amount_list.append(total_amount % max_amount)
                         # 시장가를 지정가로 변환
@@ -216,7 +216,7 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             entry_price = current_price * (1 - slipage / 100) 
                         
                         # 매매 주문
-                        for i in range(nGoal-nComplete):
+                        for i in range(int(nGoal-nComplete)):
                             entry_amount = entry_amount_list[nComplete]
                             result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
                             nComplete += 1
@@ -269,11 +269,11 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     close_amount_list = []
                     if (total_amount % max_amount == 0):
                         nGoal = total_amount // max_amount
-                        for i in range(nGoal):
+                        for i in range(int(nGoal)):
                             close_amount_list.append(max_amount)
                     else:
                         nGoal = total_amount // max_amount + 1
-                        for i in range(nGoal - 1):
+                        for i in range(int(nGoal - 1)):
                             close_amount_list.append(max_amount)
                         close_amount_list.append(total_amount % max_amount)
                     # 시장가를 지정가로 변환
@@ -286,7 +286,7 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         close_price = current_price * (1 - slipage / 100)
                     
                     # 매매 주문
-                    for i in range(nGoal-nComplete):
+                    for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
                         result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                         nComplete += 1
