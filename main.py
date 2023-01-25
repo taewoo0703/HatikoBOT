@@ -193,7 +193,8 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             bot.future.set_leverage(order_info.leverage, symbol)
                         # total amount를 max_amount로 쪼개기
                         total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
-                        max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        max_amount = 2
                         # Set nGoal
                         entry_amount_list = []
                         if (total_amount % max_amount == 0):
@@ -262,7 +263,8 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     
                     # total amount를 max_amount로 쪼개기
                     total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
-                    max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                    # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                    max_amount = 2
                     # Set nGoal
                     close_amount_list = []
                     if (total_amount % max_amount == 0):
