@@ -186,35 +186,36 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         # Entry 매매 코드
                         ###################################
                         
-                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                        side = bot.parse_side(order_info.side)
-                        quote = bot.parse_quote(order_info.quote)
-                        if order_info.leverage is not None:
-                            bot.future.set_leverage(order_info.leverage, symbol)
-                        # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
-                        # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                        max_amount = 2
-                        # Set nGoal
-                        entry_amount_list = []
-                        if (total_amount % max_amount == 0):
-                            nGoal = total_amount // max_amount
-                            for i in range(int(nGoal)):
-                                entry_amount_list.append(max_amount)
-                        else:
-                            nGoal = total_amount // max_amount + 1
-                            for i in range(int(nGoal - 1)):
-                                entry_amount_list.append(max_amount)
-                            entry_amount_list.append(total_amount % max_amount)
-                        # 시장가를 지정가로 변환
-                        # 슬리피지 0.8프로 짜리 지정가로 변환
-                        current_price = bot.fetch_price(order_info.base, quote)
-                        slipage = 0.8
-                        if side == "buy":
-                            entry_price = current_price * (1 + slipage / 100)
-                        if side == "sell":
-                            entry_price = current_price * (1 - slipage / 100) 
-                        
+                        if nTry == 0:   # 초기 세팅
+                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                            side = bot.parse_side(order_info.side)
+                            quote = bot.parse_quote(order_info.quote)
+                            if order_info.leverage is not None:
+                                bot.future.set_leverage(order_info.leverage, symbol)
+                            # total amount를 max_amount로 쪼개기
+                            total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
+                            # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                            max_amount = 2
+                            # Set nGoal
+                            entry_amount_list = []
+                            if (total_amount % max_amount == 0):
+                                nGoal = total_amount // max_amount
+                                for i in range(int(nGoal)):
+                                    entry_amount_list.append(max_amount)
+                            else:
+                                nGoal = total_amount // max_amount + 1
+                                for i in range(int(nGoal - 1)):
+                                    entry_amount_list.append(max_amount)
+                                entry_amount_list.append(total_amount % max_amount)
+                            # 시장가를 지정가로 변환
+                            # 슬리피지 0.8프로 짜리 지정가로 변환
+                            current_price = bot.fetch_price(order_info.base, quote)
+                            slipage = 0.8
+                            if side == "buy":
+                                entry_price = current_price * (1 + slipage / 100)
+                            if side == "sell":
+                                entry_price = current_price * (1 - slipage / 100) 
+                            
                         # 매매 주문
                         for i in range(int(nGoal-nComplete)):
                             entry_amount = entry_amount_list[nComplete]
@@ -257,33 +258,34 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     #############################
                     ## Close 매매코드
                     #############################
-                    symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                    side = bot.parse_side(order_info.side)
-                    quote = bot.parse_quote(order_info.quote)
-                    
-                    # total amount를 max_amount로 쪼개기
-                    total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
-                    # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                    max_amount = 2
-                    # Set nGoal
-                    close_amount_list = []
-                    if (total_amount % max_amount == 0):
-                        nGoal = total_amount // max_amount
-                        for i in range(int(nGoal)):
-                            close_amount_list.append(max_amount)
-                    else:
-                        nGoal = total_amount // max_amount + 1
-                        for i in range(int(nGoal - 1)):
-                            close_amount_list.append(max_amount)
-                        close_amount_list.append(total_amount % max_amount)
-                    # 시장가를 지정가로 변환
-                    # 슬리피지 0.8프로 짜리 지정가로 변환
-                    current_price = bot.fetch_price(order_info.base, quote)
-                    slipage = 0.8
-                    if side == "buy":
-                        close_price = current_price * (1 + slipage / 100)
-                    if side == "sell":
-                        close_price = current_price * (1 - slipage / 100)
+                    if nTry == 0:   # 초기 세팅
+                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                        side = bot.parse_side(order_info.side)
+                        quote = bot.parse_quote(order_info.quote)
+                        
+                        # total amount를 max_amount로 쪼개기
+                        total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.percent)
+                        # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        max_amount = 2
+                        # Set nGoal
+                        close_amount_list = []
+                        if (total_amount % max_amount == 0):
+                            nGoal = total_amount // max_amount
+                            for i in range(int(nGoal)):
+                                close_amount_list.append(max_amount)
+                        else:
+                            nGoal = total_amount // max_amount + 1
+                            for i in range(int(nGoal - 1)):
+                                close_amount_list.append(max_amount)
+                            close_amount_list.append(total_amount % max_amount)
+                        # 시장가를 지정가로 변환
+                        # 슬리피지 0.8프로 짜리 지정가로 변환
+                        current_price = bot.fetch_price(order_info.base, quote)
+                        slipage = 0.8
+                        if side == "buy":
+                            close_price = current_price * (1 + slipage / 100)
+                        if side == "sell":
+                            close_price = current_price * (1 - slipage / 100)
                     
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
