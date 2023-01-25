@@ -102,8 +102,11 @@ baseShort1 = ""
 baseShort2 = ""
 baseShort3 = ""
 baseShort4 = ""
+nMaxTry = 10
 
-
+@app.get("/version")
+async def version():
+    return "2023-01-25 version. 에러가 나도 최대 5번까지 매매 시도함. 테스트용, maxamount 2로 제한"
 
 @ app.get("/hatikoinfo")
 async def hatikoinfo():
@@ -133,123 +136,190 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
     global isExistShort1, isExistShort2, isExistShort3, isExistShort4
     global baseLong1, baseLong2, baseLong3, baseLong4
     global baseShort1, baseShort2, baseShort3, baseShort4
+    global nMaxTry
+    # 초기화 단계
     result = None
-    try:
-        # 엔트리 주문 중복 무시
-        if isExistLong1 and order_info.order_name == "Long1":
-            return {"result" : "ignore"}
-        if isExistLong2 and order_info.order_name == "Long2":
-            return {"result" : "ignore"}
-        if isExistLong3 and order_info.order_name == "Long3":
-            return {"result" : "ignore"}
-        if isExistLong4 and order_info.order_name == "Long4":
-            return {"result" : "ignore"}
-        if isExistShort1 and order_info.order_name == "Short1":
-            return {"result" : "ignore"}
-        if isExistShort2 and order_info.order_name == "Short2":
-            return {"result" : "ignore"}
-        if isExistShort3 and order_info.order_name == "Short3":
-            return {"result" : "ignore"}
-        if isExistShort4 and order_info.order_name == "Short4":
-            return {"result" : "ignore"}
-        
-        # 안 산 주문에 대한 종료 무시
-        if order_info.side.startswith("close/"):
-            if order_info.base not in [baseLong1, baseLong2, baseLong3, baseLong4, baseShort1, baseShort2, baseShort3, baseShort4]:
-                return {"result" : "ignore"}
-            if order_info.order_name in ["TakeProfitS2", "TakeProfitS3", "TakeProfitS4", "TakeProfitL2", "TakeProfitL3", "TakeProfitL4"]:
-                return {"result" : "ignore"}
+    nGoal = 0
+    nComplete = 0
 
-        exchange_name = order_info.exchange.upper()
-        exchange = get_exchange(exchange_name, order_info.kis_number)
-        if exchange_name in ("BINANCE", "UPBIT", "BYBIT", "BITGET"):
-            bot = exchange.dict()[order_info.exchange]
-            bot.order_info = order_info
-            if order_info.side == "buy":
-                result = bot.market_buy(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent)
-            elif order_info.side == "sell":
-                result = bot.market_sell(order_info.base, order_info.quote, order_info.type,
-                                         order_info.side, order_info.amount, order_info.price, order_info.percent)
-            elif order_info.side.startswith("entry/"):
-                if order_info.stop_price and order_info.profit_price:
-                    result = bot.market_sltp_order(order_info.base, order_info.quote, order_info.type,
-                    order_info.side, order_info.amount, order_info.stop_price, order_info.profit_price)
-                else:
-                    result = bot.market_entry(order_info.base, order_info.quote, order_info.type, 
-                    order_info.side, order_info.amount, order_info.price, order_info.percent, order_info.leverage)
-                
-                # 첫번째 주문! 전역변수 세팅!
-                if order_info.order_name == "Long1":
-                    isExistLong1 = True
-                    baseLong1 = order_info.base
-                if order_info.order_name == "Long2":
-                    isExistLong2 = True
-                    baseLong2 = order_info.base                
-                if order_info.order_name == "Long3":
-                    isExistLong3 = True
-                    baseLong3 = order_info.base
-                if order_info.order_name == "Long4":
-                    isExistLong4 = True
-                    baseLong4 = order_info.base
-                if order_info.order_name == "Short1":
-                    isExistShort1 = True
-                    baseShort1 = order_info.base                
-                if order_info.order_name == "Short2":
-                    isExistShort2 = True
-                    baseShort2 = order_info.base
-                if order_info.order_name == "Short3":
-                    isExistShort3 = True
-                    baseShort3 = order_info.base
-                if order_info.order_name == "Short4":
-                    isExistShort4 = True
-                    baseShort4 = order_info.base
+    # nMaxTry 횟수만큼 자동매매 시도
+    for nTry in range(nMaxTry):
+        if nGoal != 0 and nComplete == nGoal:   # 이미 매매를 성공하면 더이상의 Try를 생략함.
+            break
+
+        try:
+            # 엔트리 주문 중복 무시
+            if isExistLong1 and order_info.order_name == "Long1":
+                return {"result" : "ignore"}
+            if isExistLong2 and order_info.order_name == "Long2":
+                return {"result" : "ignore"}
+            if isExistLong3 and order_info.order_name == "Long3":
+                return {"result" : "ignore"}
+            if isExistLong4 and order_info.order_name == "Long4":
+                return {"result" : "ignore"}
+            if isExistShort1 and order_info.order_name == "Short1":
+                return {"result" : "ignore"}
+            if isExistShort2 and order_info.order_name == "Short2":
+                return {"result" : "ignore"}
+            if isExistShort3 and order_info.order_name == "Short3":
+                return {"result" : "ignore"}
+            if isExistShort4 and order_info.order_name == "Short4":
+                return {"result" : "ignore"}
             
-            elif order_info.side.startswith("close/"):
-                result = bot.market_close(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent)
+            # 안 산 주문에 대한 종료 무시
+            if order_info.side.startswith("close/"):
+                if order_info.base not in [baseLong1, baseLong2, baseLong3, baseLong4, baseShort1, baseShort2, baseShort3, baseShort4]:
+                    return {"result" : "ignore"}
+                if order_info.order_name in ["TakeProfitS2", "TakeProfitS3", "TakeProfitS4", "TakeProfitL2", "TakeProfitL3", "TakeProfitL4"]:
+                    return {"result" : "ignore"}
 
-                # 어떤 베이스인지 찾아서 isExist를 False로 바꿔줘야함
-                if order_info.base == baseLong1:
-                    isExistLong1 = False
-                    baseLong1 = ""
-                if order_info.base == baseLong2:
-                    isExistLong2 = False                
-                    baseLong2 = ""
-                if order_info.base == baseLong3:
-                    isExistLong3 = False
-                    baseLong3 = ""
-                if order_info.base == baseLong4:
-                    isExistLong4 = False
-                    baseLong4 = ""
-                if order_info.base == baseShort1:
-                    isExistShort1 = False
-                    baseShort1 = ""
-                if order_info.base == baseShort2:
-                    isExistShort2 = False
-                    baseShort2 = ""
-                if order_info.base == baseShort3:
-                    isExistShort3 = False
-                    baseShort3 = ""
-                if order_info.base == baseShort4:
-                    isExistShort4 = False      
-                    baseShort4 = ""
-                                  
-            background_tasks.add_task(log, exchange_name, result, order_info)
-        elif exchange_name in ("KRX", "NASDAQ", "NYSE", "AMEX"):
-            kis: KoreaInvestment = exchange
-            result = kis.create_order(order_info.exchange, order_info.base, order_info.type.lower(), order_info.side.lower(), order_info.amount)
-            background_tasks.add_task(log, exchange_name, result, order_info)
+            exchange_name = order_info.exchange.upper()
+            exchange = get_exchange(exchange_name, order_info.kis_number)
+            if exchange_name in ("BINANCE"):    # Binance Only
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("entry/"):
+                    if order_info.stop_price and order_info.profit_price:
+                        pass
+                    else:
+                        ###################################
+                        # Entry 매매 코드
+                        ###################################
+                        
+                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                        side = bot.parse_side(order_info.side)
+                        quote = bot.parse_quote(order_info.quote)
+                        if order_info.leverage is not None:
+                            bot.future.set_leverage(order_info.leverage, symbol)
+                        # total amount를 max_amount로 쪼개기
+                        total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.entry_percent)
+                        # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        max_amount = 2
+                        # Set nGoal
+                        nGoal = total_amount // max_amount + 1
+                        entry_amount_list = []  # 예: [max_amount, max_mount, 나머지] 이런식
+                        for i in range(nGoal - 1):
+                            entry_amount_list.append(max_amount)
+                        entry_amount_list.append(total_amount % max_amount)
+                        # 시장가를 지정가로 변환
+                        # 슬리피지 0.8프로 짜리 지정가로 변환
+                        current_price = bot.fetch_price(order_info.base, quote)
+                        slipage = 0.8
+                        if side == "buy":
+                            entry_price = current_price * (1 + slipage / 100)
+                        if side == "sell":
+                            entry_price = current_price * (1 - slipage / 100) 
+                        
+                        # 매매 주문
+                        for i in range(nGoal-nComplete):
+                            entry_amount = entry_amount_list[nComplete]
+                            result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
+                            nComplete += 1
+                            # 디스코드 로그생성
+                            background_tasks.add_task(log, exchange_name, result, order_info)
+                        
+                        # 매매가 전부 종료되면
+                        # hatikoinfo 업데이트
+                        if order_info.order_name == "Long1":
+                            isExistLong1 = True
+                            baseLong1 = order_info.base
+                        if order_info.order_name == "Long2":
+                            isExistLong2 = True
+                            baseLong2 = order_info.base                
+                        if order_info.order_name == "Long3":
+                            isExistLong3 = True
+                            baseLong3 = order_info.base
+                        if order_info.order_name == "Long4":
+                            isExistLong4 = True
+                            baseLong4 = order_info.base
+                        if order_info.order_name == "Short1":
+                            isExistShort1 = True
+                            baseShort1 = order_info.base                
+                        if order_info.order_name == "Short2":
+                            isExistShort2 = True
+                            baseShort2 = order_info.base
+                        if order_info.order_name == "Short3":
+                            isExistShort3 = True
+                            baseShort3 = order_info.base
+                        if order_info.order_name == "Short4":
+                            isExistShort4 = True
+                            baseShort4 = order_info.base
 
-    except TypeError:
-        background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
-    except Exception:
-        background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
-        log_alert_message(order_info)
 
-    else:
-        return {"result": "success"}
+                if order_info.side.startswith("close/"):
+                    # result = bot.market_close(order_info.base, order_info.quote, order_info.type, order_info.side, order_info.amount, order_info.price, order_info.percent)
 
-    finally:
-        pass
+                    #############################
+                    ## Close 매매코드
+                    #############################
+                    symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                    side = bot.parse_side(order_info.side)
+                    quote = bot.parse_quote(order_info.quote)
+                    
+                    # total amount를 max_amount로 쪼개기
+                    total_amount = bot.get_amount(order_info.base, quote, order_info.amount, order_info.close_percent)
+                    # max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                    max_amount = 2
+                    # Set nGoal
+                    nGoal = total_amount // max_amount + 1
+                    close_amount_list = []  # 예: [max_amount, max_mount, 나머지] 이런식
+                    for i in range(nGoal - 1):
+                        close_amount_list.append(max_amount)
+                    close_amount_list.append(total_amount % max_amount)
+                    # 시장가를 지정가로 변환
+                    # 슬리피지 0.8프로 짜리 지정가로 변환
+                    current_price = bot.fetch_price(order_info.base, quote)
+                    slipage = 0.8
+                    if side == "buy":
+                        close_price = current_price * (1 + slipage / 100)
+                    if side == "sell":
+                        close_price = current_price * (1 - slipage / 100)
+                    
+                    # 매매 주문
+                    for i in range(nGoal-nComplete):
+                        close_amount = close_amount_list[nComplete]
+                        result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                        nComplete += 1
+                        background_tasks.add_task(log, exchange_name, result, order_info)
+
+                    # 매매가 전부 종료된 후
+                    # 어떤 베이스인지 찾아서 isExist를 False로 바꿔줘야함
+                    if order_info.base == baseLong1:
+                        isExistLong1 = False
+                        baseLong1 = ""
+                    if order_info.base == baseLong2:
+                        isExistLong2 = False                
+                        baseLong2 = ""
+                    if order_info.base == baseLong3:
+                        isExistLong3 = False
+                        baseLong3 = ""
+                    if order_info.base == baseLong4:
+                        isExistLong4 = False
+                        baseLong4 = ""
+                    if order_info.base == baseShort1:
+                        isExistShort1 = False
+                        baseShort1 = ""
+                    if order_info.base == baseShort2:
+                        isExistShort2 = False
+                        baseShort2 = ""
+                    if order_info.base == baseShort3:
+                        isExistShort3 = False
+                        baseShort3 = ""
+                    if order_info.base == baseShort4:
+                        isExistShort4 = False      
+                        baseShort4 = ""
+
+        except TypeError:
+            background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
+        except Exception:
+            background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
+            log_alert_message(order_info)
+
+        else:
+            return {"result": "success"}
+
+        finally:
+            pass
 
 
 @ app.post("/order")

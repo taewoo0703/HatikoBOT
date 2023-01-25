@@ -27,8 +27,8 @@ class Binance:
             'apiKey': key,
             'secret': secret,
         })
-        self.spot.load_markets()
-        self.future.load_markets()
+        self.spot_markets = self.spot.load_markets()
+        self.future_markets = self.future.load_markets()
         self.order_info: MarketOrder = None
 
     def parse_quote(self, quote: str):
@@ -108,7 +108,7 @@ class Binance:
         if side == "buy":
             entry_price = current_price * (1 + slipage / 100)
         if side == "sell":
-            entry_price = current_price * (1 - slipage / 100)
+            entry_price = current_price * (1 - slipage / 100) 
         return self.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
 
     # def market_stop_order(self, base: str, quote: str, type: str, side: str, amount: float, price: float, stop_price: float):
