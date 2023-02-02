@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 import httpx
 from exchange.stock.kis import KoreaInvestment
 from model import MarketOrder, PriceRequest
-from utility import settings, log_order_message, log_alert_message, print_alert_message, logger_test, log_order_error_message, log_validation_error_message
+from utility import settings, log_order_message, log_alert_message, print_alert_message, logger_test, log_order_error_message, log_validation_error_message, log_recv_message
 import traceback
 from exchange import get_exchange, log_message, db, settings
 
@@ -141,6 +141,9 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
     result = None
     nGoal = 0
     nComplete = 0
+
+    # [Debug] 트뷰 시그널이 도착했다는 알람 발생
+    background_tasks.add_task(log_recv_message, order_info)
 
     # nMaxTry 횟수만큼 자동매매 시도
     for nTry in range(nMaxTry):
