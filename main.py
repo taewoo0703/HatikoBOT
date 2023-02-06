@@ -395,21 +395,21 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
 
         try:
             # 엔트리 주문 중복 무시
-            if (len(baseLong1_list) >= nMaxLong and order_info.order_name == "Long1") or order_info.base in baseLong1_list:
+            if (len(baseLong1_list) >= nMaxLong or order_info.base in baseLong1_list) and order_info.order_name == "Long1":
                 return {"result" : "ignore"}
-            if (len(baseLong2_list) >= nMaxLong and order_info.order_name == "Long2") or order_info.base in baseLong2_list:
+            if (len(baseLong2_list) >= nMaxLong or order_info.base in baseLong2_list) and order_info.order_name == "Long2":
                 return {"result" : "ignore"}
-            if (len(baseLong3_list) >= nMaxLong and order_info.order_name == "Long3") or order_info.base in baseLong3_list:
+            if (len(baseLong3_list) >= nMaxLong or order_info.base in baseLong3_list) and order_info.order_name == "Long3":
                 return {"result" : "ignore"}
-            if (len(baseLong4_list) >= nMaxLong and order_info.order_name == "Long4") or order_info.base in baseLong4_list:
+            if (len(baseLong4_list) >= nMaxLong or order_info.base in baseLong4_list) and order_info.order_name == "Long4":
                 return {"result" : "ignore"}
-            if (len(baseShort1_list) >= nMaxShort and order_info.order_name == "Short1") or order_info.base in baseShort1_list:
+            if (len(baseShort1_list) >= nMaxShort or order_info.base in baseShort1_list) and order_info.order_name == "Short1":
                 return {"result" : "ignore"}
-            if (len(baseShort2_list) >= nMaxShort and order_info.order_name == "Short2") or order_info.base in baseShort2_list:
+            if (len(baseShort2_list) >= nMaxShort or order_info.base in baseShort2_list) and order_info.order_name == "Short2":
                 return {"result" : "ignore"}
-            if (len(baseShort3_list) >= nMaxShort and order_info.order_name == "Short3") or order_info.base in baseShort3_list:
+            if (len(baseShort3_list) >= nMaxShort or order_info.base in baseShort3_list) and order_info.order_name == "Short3":
                 return {"result" : "ignore"}
-            if (len(baseShort4_list) >= nMaxShort and order_info.order_name == "Short4") or order_info.base in baseShort4_list:
+            if (len(baseShort4_list) >= nMaxShort or order_info.base in baseShort4_list) and order_info.order_name == "Short4":
                 return {"result" : "ignore"}
             
             # 안 산 주문에 대한 종료 무시
@@ -593,21 +593,21 @@ async def hatiko1(order_info: MarketOrder, background_tasks: BackgroundTasks):
 
         try:
             # 엔트리 주문 중복 무시
-            if (len(baseLong1_list) >= nMaxLong and order_info.order_name == "Long1") or order_info.base in baseLong1_list:
+            if (len(baseLong1_list) >= nMaxLong or order_info.base in baseLong1_list) and order_info.order_name == "Long1":
                 return {"result" : "ignore"}
-            if (len(baseLong2_list) >= nMaxLong and order_info.order_name == "Long2") or order_info.base in baseLong2_list:
+            if (len(baseLong2_list) >= nMaxLong or order_info.base in baseLong2_list) and order_info.order_name == "Long2":
                 return {"result" : "ignore"}
-            if (len(baseLong3_list) >= nMaxLong and order_info.order_name == "Long3") or order_info.base in baseLong3_list:
+            if (len(baseLong3_list) >= nMaxLong or order_info.base in baseLong3_list) and order_info.order_name == "Long3":
                 return {"result" : "ignore"}
-            if (len(baseLong4_list) >= nMaxLong and order_info.order_name == "Long4") or order_info.base in baseLong4_list:
+            if (len(baseLong4_list) >= nMaxLong or order_info.base in baseLong4_list) and order_info.order_name == "Long4":
                 return {"result" : "ignore"}
-            if (len(baseShort1_list) >= nMaxShort and order_info.order_name == "Short1") or order_info.base in baseShort1_list:
+            if (len(baseShort1_list) >= nMaxShort or order_info.base in baseShort1_list) and order_info.order_name == "Short1":
                 return {"result" : "ignore"}
-            if (len(baseShort2_list) >= nMaxShort and order_info.order_name == "Short2") or order_info.base in baseShort2_list:
+            if (len(baseShort2_list) >= nMaxShort or order_info.base in baseShort2_list) and order_info.order_name == "Short2":
                 return {"result" : "ignore"}
-            if (len(baseShort3_list) >= nMaxShort and order_info.order_name == "Short3") or order_info.base in baseShort3_list:
+            if (len(baseShort3_list) >= nMaxShort or order_info.base in baseShort3_list) and order_info.order_name == "Short3":
                 return {"result" : "ignore"}
-            if (len(baseShort4_list) >= nMaxShort and order_info.order_name == "Short4") or order_info.base in baseShort4_list:
+            if (len(baseShort4_list) >= nMaxShort or order_info.base in baseShort4_list) and order_info.order_name == "Short4":
                 return {"result" : "ignore"}
             
             # 안 산 주문에 대한 종료 무시
@@ -793,21 +793,21 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
 
         try:
             # 엔트리 주문 중복 무시
-            if (len(baseLong1_list) >= nMaxLong and order_info.order_name == "Long1") or order_info.base in baseLong1_list:
+            if (len(baseLong1_list) >= nMaxLong or order_info.base in baseLong1_list) and order_info.order_name == "Long1":
                 return {"result" : "ignore"}
-            if (len(baseLong2_list) >= nMaxLong and order_info.order_name == "Long2") or order_info.base in baseLong2_list:
+            if (len(baseLong2_list) >= nMaxLong or order_info.base in baseLong2_list) and order_info.order_name == "Long2":
                 return {"result" : "ignore"}
-            if (len(baseLong3_list) >= nMaxLong and order_info.order_name == "Long3") or order_info.base in baseLong3_list:
+            if (len(baseLong3_list) >= nMaxLong or order_info.base in baseLong3_list) and order_info.order_name == "Long3":
                 return {"result" : "ignore"}
-            if (len(baseLong4_list) >= nMaxLong and order_info.order_name == "Long4") or order_info.base in baseLong4_list:
+            if (len(baseLong4_list) >= nMaxLong or order_info.base in baseLong4_list) and order_info.order_name == "Long4":
                 return {"result" : "ignore"}
-            if (len(baseShort1_list) >= nMaxShort and order_info.order_name == "Short1") or order_info.base in baseShort1_list:
+            if (len(baseShort1_list) >= nMaxShort or order_info.base in baseShort1_list) and order_info.order_name == "Short1":
                 return {"result" : "ignore"}
-            if (len(baseShort2_list) >= nMaxShort and order_info.order_name == "Short2") or order_info.base in baseShort2_list:
+            if (len(baseShort2_list) >= nMaxShort or order_info.base in baseShort2_list) and order_info.order_name == "Short2":
                 return {"result" : "ignore"}
-            if (len(baseShort3_list) >= nMaxShort and order_info.order_name == "Short3") or order_info.base in baseShort3_list:
+            if (len(baseShort3_list) >= nMaxShort or order_info.base in baseShort3_list) and order_info.order_name == "Short3":
                 return {"result" : "ignore"}
-            if (len(baseShort4_list) >= nMaxShort and order_info.order_name == "Short4") or order_info.base in baseShort4_list:
+            if (len(baseShort4_list) >= nMaxShort or order_info.base in baseShort4_list) and order_info.order_name == "Short4":
                 return {"result" : "ignore"}
             
             # 안 산 주문에 대한 종료 무시
