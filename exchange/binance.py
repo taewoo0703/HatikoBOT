@@ -68,6 +68,58 @@ class Binance:
             raise Exception("amount와 percent 중 하나는 입력해야 합니다")
         return result
 
+    # hatiko4용 get_amount
+    def get_amount_hatiko4(self, base, quote) -> float:
+        # Long Entry
+        if self.order_info.side in ("entry/buy"):
+            total_bal = float(self.future.fetch_balance().get('info').get('totalCrossWalletBalance'))
+            cash = total_bal / 16.0     # 총 자본을 4분할 + 4종목 분할 하기 때문에 나누기 16
+            cash = cash * 100.0 / 70.0  # 청산당할 MDD를 70%로 설정하기 때문에 100/70을 곱함.
+            current_price = self.fetch_price(base, quote)
+            result = cash / current_price
+            
+        # Short Entry
+        if self.order_info.side in ("entry/sell"):
+            total_bal = float(self.future.fetch_balance().get('info').get('totalCrossWalletBalance'))
+            cash = total_bal / 4.0     # 총 자본을 4분할 매수 + 단일종목 몰빵 하기 때문에 나누기 4
+            cash = cash * 100.0 / 150.0  # 청산당할 MDD를 150%로 설정하기 때문에 100/150을 곱함.
+            current_price = self.fetch_price(base, quote)
+            result = cash / current_price
+
+        # Long Exit & Short Exit
+        if self.order_info.side in ("close/sell", "close/buy"):
+            symbol = self.parse_symbol(base, quote)
+            free_amount = self.get_futures_position(symbol) if self.order_info.is_crypto and self.order_info.is_futures else self.get_balance(base)
+            result = free_amount        # 팔 때는 100% 전량 매도함
+
+        return result
+    
+    # hatiko2용 get_amount
+    def get_amount_hatiko2(self, base, quote) -> float:
+        # Long Entry
+        if self.order_info.side in ("entry/buy"):
+            total_bal = float(self.future.fetch_balance().get('info').get('totalCrossWalletBalance'))
+            cash = total_bal / 8.0     # 총 자본을 4분할 + 2종목 분할 하기 때문에 나누기 8
+            cash = cash * 100.0 / 70.0  # 청산당할 MDD를 70%로 설정하기 때문에 100/70을 곱함.
+            current_price = self.fetch_price(base, quote)
+            result = cash / current_price
+            
+        # Short Entry
+        if self.order_info.side in ("entry/sell"):
+            total_bal = float(self.future.fetch_balance().get('info').get('totalCrossWalletBalance'))
+            cash = total_bal / 4.0     # 총 자본을 4분할 매수 + 단일종목 몰빵 하기 때문에 나누기 4
+            cash = cash * 100.0 / 150.0  # 청산당할 MDD를 150%로 설정하기 때문에 100/150을 곱함.
+            current_price = self.fetch_price(base, quote)
+            result = cash / current_price
+
+        # Long Exit & Short Exit
+        if self.order_info.side in ("close/sell", "close/buy"):
+            symbol = self.parse_symbol(base, quote)
+            free_amount = self.get_futures_position(symbol) if self.order_info.is_crypto and self.order_info.is_futures else self.get_balance(base)
+            result = free_amount        # 팔 때는 100% 전량 매도함
+
+        return result
+
     def market_order(self, base: str, quote: str, type: str, side: str, amount: float, price: float = None):
         symbol = self.parse_symbol(base, quote)
         side = self.parse_side(side)
