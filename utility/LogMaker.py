@@ -139,7 +139,7 @@ def log_recv_message(order_info: MarketOrder):
     # 시그널 도착했다는 알림 by PTW
     embed = Embed(
         title=order_info.order_name,
-        description="[Debug]시그널 도착",
+        description=f"[Debug]{order_info.base} 시그널 도착",
         color=0xFFFFFF,
     )
     log_message(embed=embed)

@@ -106,7 +106,7 @@ nMaxTry = 10
 
 @app.get("/version")
 async def version():
-    return "2023-01-25 version. 에러가 나도 최대 5번까지 매매 시도함. min_amount 추가. 추후 보완해야할점 : 보유중인 종목에 대한 매도시그널은 무조건 수행해야지"
+    return "2023-02-06 version. 종목명-시그널 도착 알림 추가"
 
 @ app.get("/hatikoinfo")
 async def hatikoinfo():
