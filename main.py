@@ -308,14 +308,8 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             for i in range(int(nGoal - 1)):
                                 close_amount_list.append(max_amount)
                             close_amount_list.append(total_amount % max_amount)
-                        # 시장가를 지정가로 변환
-                        # 슬리피지 0.8프로 짜리 지정가로 변환
-                        current_price = bot.fetch_price(order_info.base, quote)
-                        slipage = 0.8
-                        if side == "buy":
-                            close_price = current_price * (1 + slipage / 100)
-                        if side == "sell":
-                            close_price = current_price * (1 - slipage / 100)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
                     
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
@@ -516,14 +510,8 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             for i in range(int(nGoal - 1)):
                                 close_amount_list.append(max_amount)
                             close_amount_list.append(total_amount % max_amount)
-                        # 시장가를 지정가로 변환
-                        # 슬리피지 0.8프로 짜리 지정가로 변환
-                        current_price = bot.fetch_price(order_info.base, quote)
-                        slipage = 0.8
-                        if side == "buy":
-                            close_price = current_price * (1 + slipage / 100)
-                        if side == "sell":
-                            close_price = current_price * (1 - slipage / 100)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
                     
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
@@ -714,14 +702,8 @@ async def hatiko1(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             for i in range(int(nGoal - 1)):
                                 close_amount_list.append(max_amount)
                             close_amount_list.append(total_amount % max_amount)
-                        # 시장가를 지정가로 변환
-                        # 슬리피지 0.8프로 짜리 지정가로 변환
-                        current_price = bot.fetch_price(order_info.base, quote)
-                        slipage = 0.8
-                        if side == "buy":
-                            close_price = current_price * (1 + slipage / 100)
-                        if side == "sell":
-                            close_price = current_price * (1 - slipage / 100)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
                     
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
@@ -914,14 +896,8 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             for i in range(int(nGoal - 1)):
                                 close_amount_list.append(max_amount)
                             close_amount_list.append(total_amount % max_amount)
-                        # 시장가를 지정가로 변환
-                        # 슬리피지 0.8프로 짜리 지정가로 변환
-                        current_price = bot.fetch_price(order_info.base, quote)
-                        slipage = 0.8
-                        if side == "buy":
-                            close_price = current_price * (1 + slipage / 100)
-                        if side == "sell":
-                            close_price = current_price * (1 - slipage / 100)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
                     
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
