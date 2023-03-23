@@ -117,7 +117,7 @@ baseShort4_list = []
 
 @app.get("/version")
 async def version():
-    return "2023-02-06 version. 종목명-시그널 도착 알림 추가, 4개종목 분할매수를 위한 /hatiko4 추가, 2개종목 분할매수를 위한 /hatiko2 추가, /hatiko4info 추가"
+    return "2023-03-22 version. 트뷰 시그널가 기준 1%이상 괴리있으면 시그널 무시기능 추가"
 
 @ app.get("/hatikoinfo")
 async def hatikoinfo():
@@ -239,7 +239,12 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                                 entry_amount_list.append(total_amount % max_amount)
                             # 시장가를 지정가로 변환
                             # 슬리피지 0.8프로 짜리 지정가로 변환
+                            # 트뷰 시그널 가격과 1%의 괴리가 있으면 시그널 무시
                             current_price = bot.fetch_price(order_info.base, quote)
+                            if order_info.order_name in ["Long1", "Long2", "Long3", "Long4"] and current_price > order_info.price * 1.01:
+                                return {"result" : "ignore"}
+                            if order_info.order_name in ["Short1", "Short2", "Short3", "Short4"] and current_price < order_info.price * 0.99:
+                                return {"result" : "ignore"}
                             slipage = 0.8
                             if side == "buy":
                                 entry_price = current_price * (1 + slipage / 100)
@@ -449,7 +454,12 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                                 entry_amount_list.append(total_amount % max_amount)
                             # 시장가를 지정가로 변환
                             # 슬리피지 0.8프로 짜리 지정가로 변환
+                            # 트뷰 시그널 가격과 1%의 괴리가 있으면 시그널 무시
                             current_price = bot.fetch_price(order_info.base, quote)
+                            if order_info.order_name in ["Long1", "Long2", "Long3", "Long4"] and current_price > order_info.price * 1.01:
+                                return {"result" : "ignore"}
+                            if order_info.order_name in ["Short1", "Short2", "Short3", "Short4"] and current_price < order_info.price * 0.99:
+                                return {"result" : "ignore"}
                             slipage = 0.8
                             if side == "buy":
                                 entry_price = current_price * (1 + slipage / 100)
@@ -642,7 +652,12 @@ async def hatiko1(order_info: MarketOrder, background_tasks: BackgroundTasks):
                                 entry_amount_list.append(total_amount % max_amount)
                             # 시장가를 지정가로 변환
                             # 슬리피지 0.8프로 짜리 지정가로 변환
+                            # 트뷰 시그널 가격과 1%의 괴리가 있으면 시그널 무시
                             current_price = bot.fetch_price(order_info.base, quote)
+                            if order_info.order_name in ["Long1", "Long2", "Long3", "Long4"] and current_price > order_info.price * 1.01:
+                                return {"result" : "ignore"}
+                            if order_info.order_name in ["Short1", "Short2", "Short3", "Short4"] and current_price < order_info.price * 0.99:
+                                return {"result" : "ignore"}
                             slipage = 0.8
                             if side == "buy":
                                 entry_price = current_price * (1 + slipage / 100)
@@ -836,7 +851,12 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                                 entry_amount_list.append(total_amount % max_amount)
                             # 시장가를 지정가로 변환
                             # 슬리피지 0.8프로 짜리 지정가로 변환
+                            # 트뷰 시그널 가격과 1%의 괴리가 있으면 시그널 무시
                             current_price = bot.fetch_price(order_info.base, quote)
+                            if order_info.order_name in ["Long1", "Long2", "Long3", "Long4"] and current_price > order_info.price * 1.01:
+                                return {"result" : "ignore"}
+                            if order_info.order_name in ["Short1", "Short2", "Short3", "Short4"] and current_price < order_info.price * 0.99:
+                                return {"result" : "ignore"}
                             slipage = 0.8
                             if side == "buy":
                                 entry_price = current_price * (1 + slipage / 100)
