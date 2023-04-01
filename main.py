@@ -117,7 +117,7 @@ baseShort4_list = []
 
 @app.get("/version")
 async def version():
-    return "2023-03-22 version. 트뷰 시그널가 기준 1%이상 괴리있으면 시그널 무시기능 추가"
+    return "2023-04-01 version. 트뷰 내 바이낸스 선물티커 변경 반영"
 
 @ app.get("/hatikoinfo")
 async def hatikoinfo():
