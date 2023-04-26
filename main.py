@@ -348,10 +348,12 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        if close_amount != 0:
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
                             result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                        nComplete += 1
-                        background_tasks.add_task(log, exchange_name, result, order_info)
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
                     # 매매가 전부 종료된 후
                     # 매매종목 리스트 업데이트
@@ -548,10 +550,12 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        if close_amount != 0:
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
                             result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                        nComplete += 1
-                        background_tasks.add_task(log, exchange_name, result, order_info)
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
                     # 매매가 전부 종료된 후
                     # 매매종목 리스트 업데이트
@@ -748,10 +752,12 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        if close_amount != 0:
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
                             result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                        nComplete += 1
-                        background_tasks.add_task(log, exchange_name, result, order_info)
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
                     # 매매가 전부 종료된 후
                     # 매매종목 리스트 업데이트
@@ -1010,10 +1016,12 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            if close_amount != 0:
+                            if close_amount < min_amount:
+                                nComplete += 1
+                            else:
                                 result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                            nComplete += 1
-                            background_tasks.add_task(log, exchange_name, result, order_info)
+                                nComplete += 1
+                                background_tasks.add_task(log, exchange_name, result, order_info)
 
 
 
@@ -1294,10 +1302,12 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            if close_amount != 0:
+                            if close_amount < min_amount:
+                                nComplete += 1
+                            else:
                                 result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                            nComplete += 1
-                            background_tasks.add_task(log, exchange_name, result, order_info)
+                                nComplete += 1
+                                background_tasks.add_task(log, exchange_name, result, order_info)
 
 
 
@@ -1578,11 +1588,12 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            if close_amount != 0:
+                            if close_amount < min_amount:
+                                nComplete += 1
+                            else:
                                 result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                            nComplete += 1
-                            background_tasks.add_task(log, exchange_name, result, order_info)
-
+                                nComplete += 1
+                                background_tasks.add_task(log, exchange_name, result, order_info)
 
 
                         # 매매가 전부 종료된 후
