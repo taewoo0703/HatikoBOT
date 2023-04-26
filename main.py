@@ -820,6 +820,10 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                        "NextCandle_S1", "NextCandle_S2", "NextCandle_S3", "NextCandle_S4"]
     closeSignal_list = ["close Longs on open", "close Shorts on open",
                         "TakeProfit_nearL1", "TakeProfit_nearS1"]
+    ignoreSignal_list = ["TakeProfit_nearL2", "TakeProfit_nearL3", "TakeProfit_nearL4",
+                         "TakeProfit_nearS2", "TakeProfit_nearS3", "TakeProfit_nearS4",
+                         "TakeProfit_L1", "TakeProfit_L2", "TakeProfit_L3", "TakeProfit_L4",
+                         "TakeProfit_L1", "TakeProfit_L2", "TakeProfit_L3", "TakeProfit_L4"]
 
 
     # 종목개수 선정
@@ -1044,7 +1048,10 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                             Short3_list.remove(order_info.base)
                         if order_info.base in Short4_list:
                             Short4_list.remove(order_info.base)
-
+            
+            if order_info.order_name in ignoreSignal_list:
+                return {"result" : "ignore"}
+            
         except TypeError:
             background_tasks.add_task(log_order_error_message, traceback.format_exc(), order_info)
         except Exception:
