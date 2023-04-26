@@ -832,6 +832,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
     nComplete = 0
     isSettingFinish = False     # 매매전 ccxt 세팅 flag 
     orderID_list = []           # 오더id 리스트
+    isCancelSuccess = False        # 청산주문시 미체결주문 취소성공 여부
 
     # [Debug] 트뷰 시그널이 도착했다는 알람 발생
     background_tasks.add_task(log_recv_message, order_info)
@@ -994,15 +995,19 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                             close_price = order_info.price
                             isSettingFinish = True
 
-                        # (1) 청산 주문
+                        # (1) 미체결 주문 취소
+                        if not isCancelSuccess:
+                            bot.future.cancel_all_orders(symbol)
+                            isCancelSuccess = True
+
+                        # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
                             result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                             nComplete += 1
                             background_tasks.add_task(log, exchange_name, result, order_info)
 
-                        # (2) 미체결 주문 취소
-                        bot.future.cancel_all_orders(symbol)
+
 
                         # 매매가 전부 종료된 후
                         # 매매종목 리스트 업데이트
