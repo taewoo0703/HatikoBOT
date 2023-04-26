@@ -348,7 +348,8 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                        if close_amount != 0:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                         nComplete += 1
                         background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -547,7 +548,8 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                        if close_amount != 0:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                         nComplete += 1
                         background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -746,7 +748,8 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                     # 매매 주문
                     for i in range(int(nGoal-nComplete)):
                         close_amount = close_amount_list[nComplete]
-                        result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                        if close_amount != 0:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                         nComplete += 1
                         background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1007,7 +1010,8 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            if close_amount != 0:
+                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                             nComplete += 1
                             background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1264,7 +1268,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                             quote = bot.parse_quote(order_info.quote)
 
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko2(order_info.base, quote)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -1290,7 +1294,8 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            if close_amount != 0:
+                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                             nComplete += 1
                             background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1547,7 +1552,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                             quote = bot.parse_quote(order_info.quote)
 
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko4(order_info.base, quote)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -1573,7 +1578,8 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                         # (2) 청산 주문
                         for i in range(int(nGoal-nComplete)):
                             close_amount = close_amount_list[nComplete]
-                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            if close_amount != 0:
+                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
                             nComplete += 1
                             background_tasks.add_task(log, exchange_name, result, order_info)
 
