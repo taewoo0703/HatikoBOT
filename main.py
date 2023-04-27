@@ -185,6 +185,28 @@ async def hatikoInfo():
         }
     return res
 
+@ app.get("/hatikolimitInfo")
+async def hatikolimitInfo():
+    res = {
+        "nearLong1_dic"  : str(list(nearLong1_dic.keys())),
+        "nearLong2_dic"  : str(list(nearLong2_dic.keys())),
+        "nearLong3_dic"  : str(list(nearLong3_dic.keys())),
+        "nearLong4_dic"  : str(list(nearLong4_dic.keys())),
+        "nearShort1_dic" : str(list(nearShort1_dic.keys())),
+        "nearShort2_dic" : str(list(nearShort2_dic.keys())),
+        "nearShort3_dic" : str(list(nearShort3_dic.keys())),
+        "nearShort4_dic" : str(list(nearShort4_dic.keys())),
+        "Long1_list"  : str(Long1_list),
+        "Long2_list"  : str(Long2_list),
+        "Long3_list"  : str(Long3_list),
+        "Long4_list"  : str(Long4_list),
+        "Short1_list" : str(Short1_list),
+        "Short2_list" : str(Short2_list),
+        "Short3_list" : str(Short3_list),
+        "Short4_list" : str(Short4_list)
+        }
+    return res
+
 @ app.post("/hatiko")
 async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
     """
@@ -949,9 +971,6 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                     symbol = bot.parse_symbol(order_info.base, order_info.quote)
                     side = bot.parse_side(order_info.side)
                     quote = bot.parse_quote(order_info.quote)
-                    
-                    # 변경할 near_dic 선정
-                    near_dic = matchNearDic(order_info.order_name)
 
                     # 주문 변경
                     orderID_list_old = near_dic[order_info.base]
@@ -1235,9 +1254,6 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                     symbol = bot.parse_symbol(order_info.base, order_info.quote)
                     side = bot.parse_side(order_info.side)
                     quote = bot.parse_quote(order_info.quote)
-                    
-                    # 변경할 near_dic 선정
-                    near_dic = matchNearDic(order_info.order_name)
 
                     # 주문 변경
                     orderID_list_old = near_dic[order_info.base]
@@ -1521,9 +1537,6 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                     symbol = bot.parse_symbol(order_info.base, order_info.quote)
                     side = bot.parse_side(order_info.side)
                     quote = bot.parse_quote(order_info.quote)
-                    
-                    # 변경할 near_dic 선정
-                    near_dic = matchNearDic(order_info.order_name)
 
                     # 주문 변경
                     orderID_list_old = near_dic[order_info.base]

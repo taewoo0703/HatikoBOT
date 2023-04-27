@@ -261,19 +261,20 @@ class Binance:
 
     def get_balance(self, base: str):
         balance = self.future.fetch_free_balance().get(base) if self.order_info.is_crypto and self.order_info.is_futures else self.spot.fetch_free_balance().get(base)
-        if balance is None or balance == 0:
-            raise Exception("거래할 수량이 없습니다")
+        # if balance is None or balance == 0:
+        #     raise Exception("거래할 수량이 없습니다")
         return balance
 
     def get_futures_position(self, symbol):
         position = self.future.fetch_positions_risk(symbols=[symbol])
         if position:
             balance = position[0].get("contracts")
-            if balance is None or balance == 0:
-                raise Exception("거래할 수량이 없습니다")
+            # if balance is None or balance == 0:
+            #     raise Exception("거래할 수량이 없습니다")
             return balance
         else:
-            raise Exception("거래할 수량이 없습니다")
+            # raise Exception("거래할 수량이 없습니다")
+            return 0
 
     def get_listen_key(self):
         url = 'https://fapi.binance.com/fapi/v1/listenKey'
