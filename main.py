@@ -991,6 +991,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    isCancelSuccess = False
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1288,6 +1289,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    isCancelSuccess = False
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1585,6 +1587,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    isCancelSuccess = False
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
