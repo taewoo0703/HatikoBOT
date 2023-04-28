@@ -867,7 +867,10 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
     nComplete = 0
     isSettingFinish = False     # 매매전 ccxt 세팅 flag 
     orderID_list = []           # 오더id 리스트
-    isCancelSuccess = False        # 청산주문시 미체결주문 취소성공 여부
+    isCancelSuccess = False     # 미체결주문 취소성공 여부
+    amountCanceled = 0          # 주문 취소한 코인개수(NextCandle 로직에서 사용)
+    sideCanceled = ""           # 취소한 주문의 방향("buy" or "sell")
+
 
     # [Debug] 트뷰 시그널이 도착했다는 알람 발생
     background_tasks.add_task(log_recv_message, order_info)
@@ -889,57 +892,59 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                     return {"result" : "ignore"}
                 if order_info.side == "entry/sell" and (len(near_dic) >= nMaxShort or order_info.base in near_dic):
                     return {"result" : "ignore"}
-
-                # 2. 지정가 Entry 주문 (기존코드 재활용)
+                
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("entry/"):
-                        if order_info.stop_price and order_info.profit_price:
-                            pass
-                        else:
-                            ###################################
-                            # Entry 매매 코드
-                            ###################################
-                            if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                                symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                                side = bot.parse_side(order_info.side)
-                                quote = bot.parse_quote(order_info.quote)
-                                if order_info.leverage is not None:
-                                    bot.future.set_leverage(order_info.leverage, symbol)
-                                # total amount를 max_amount로 쪼개기
-                                total_amount = bot.get_amount_hatiko1(order_info.base, quote)
-                                max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                                min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                                # Set nGoal
-                                entry_amount_list = []
-                                if (total_amount % max_amount < min_amount):
-                                    nGoal = total_amount // max_amount
-                                    for i in range(int(nGoal)):
-                                        entry_amount_list.append(max_amount)
-                                else:
-                                    nGoal = total_amount // max_amount + 1
-                                    for i in range(int(nGoal - 1)):
-                                        entry_amount_list.append(max_amount)
-                                    entry_amount_list.append(total_amount % max_amount)
-                                # 진입 가격은 order_info로 넘겨받음
-                                entry_price = order_info.price
-                                isSettingFinish = True
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # 매매 주문
-                            for i in range(int(nGoal-nComplete)):
-                                entry_amount = entry_amount_list[nComplete]
-                                result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
-                                orderID_list.append(result['id'])
-                                nComplete += 1
-                                # 디스코드 로그생성
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                # 3. 지정가 Entry 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("entry/"):
+                    if order_info.stop_price and order_info.profit_price:
+                        pass
+                    else:
+                        ###################################
+                        # Entry 매매 코드
+                        ###################################
+                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                            side = bot.parse_side(order_info.side)
+                            quote = bot.parse_quote(order_info.quote)
+                            if order_info.leverage is not None:
+                                bot.future.set_leverage(order_info.leverage, symbol)
+                            # total amount를 max_amount로 쪼개기
+                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                            # Set nGoal
+                            entry_amount_list = []
+                            if (total_amount % max_amount < min_amount):
+                                nGoal = total_amount // max_amount
+                                for i in range(int(nGoal)):
+                                    entry_amount_list.append(max_amount)
+                            else:
+                                nGoal = total_amount // max_amount + 1
+                                for i in range(int(nGoal - 1)):
+                                    entry_amount_list.append(max_amount)
+                                entry_amount_list.append(total_amount % max_amount)
+                            # 진입 가격은 order_info로 넘겨받음
+                            entry_price = order_info.price
+                            isSettingFinish = True
 
-                            # 매매가 전부 종료되면
-                            # near리스트 업데이트
-                            near_dic[order_info.base] = orderID_list
+                        # 매매 주문
+                        for i in range(int(nGoal-nComplete)):
+                            entry_amount = entry_amount_list[nComplete]
+                            result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
+                            orderID_list.append(result['id'])
+                            nComplete += 1
+                            # 디스코드 로그생성
+                            background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. 매매가 전부 종료되면 near리스트 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in entrySignal_list:
                 # Long or Short 시그널 처리
@@ -962,26 +967,35 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                 if order_info.base not in near_dic or order_info.base in entry_list: 
                     return {"result" : "ignore"}
 
-                # 2. 미체결 주문 변경
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                    side = bot.parse_side(order_info.side)
-                    quote = bot.parse_quote(order_info.quote)
-
-                    # 주문 변경
-                    orderID_list_old = near_dic[order_info.base]
-                    for orderID in orderID_list_old:
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
+                
+                # 3. 미체결 주문 취소 & 재주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                
+                orderID_list_old = near_dic[order_info.base]
+                for orderID in orderID_list_old:
+                    # 미체결 주문 취소
+                    if not isCancelSuccess:
                         order = bot.future.fetch_order(orderID, symbol)
-                        result = bot.future.edit_order(orderID, symbol, "limit", order['side'], order['remaining'], order_info.price)
-                        orderID_list.append(result['id'])
-                        background_tasks.add_task(log, exchange_name, result, order_info)
-                    
-                    # near_dic 오더id 업데이트
-                    near_dic[order_info.base] = orderID_list
+                        resultCancel = bot.future.cancel_order(orderID, symbol)
+                        if resultCancel['status'] == 'canceled':
+                            amountCanceled = resultCancel['amount']
+                            sideCanceled = resultCancel['side']
+                            orderID_list_old.remove(orderID)
+                            isCancelSuccess = True
+                    # 재주문
+                    result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    orderID_list.append(result['id'])
+                    background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. near_dic 오더id 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in closeSignal_list:
                 # 청산 시그널 처리
@@ -993,92 +1007,92 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                                            list(nearShort1_dic) + list(nearShort2_dic) + list(nearShort3_dic) + list(nearShort4_dic)):
                     return {"result" : "ignore"}
 
-                # 2. 청산 주문(기존 코드 재사용) & 미체결 주문 취소
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("close/"):
-                        #############################
-                        ## Close 매매코드
-                        #############################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                            side = bot.parse_side(order_info.side)
-                            quote = bot.parse_quote(order_info.quote)
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
-                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                            # Set nGoal
-                            close_amount_list = []
-                            if (total_amount % max_amount < min_amount):
-                                nGoal = total_amount // max_amount
-                                for i in range(int(nGoal)):
-                                    close_amount_list.append(max_amount)
-                            else:
-                                nGoal = total_amount // max_amount + 1
-                                for i in range(int(nGoal - 1)):
-                                    close_amount_list.append(max_amount)
-                                close_amount_list.append(total_amount % max_amount)
-                            # 트뷰에 나오는 청산 가격에 그대로 청산
-                            close_price = order_info.price
-                            isSettingFinish = True
+                # 3. 미체결 주문 취소 & 청산 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("close/"):
+                    #############################
+                    ## Close 매매코드
+                    #############################
+                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                        side = bot.parse_side(order_info.side)
+                        quote = bot.parse_quote(order_info.quote)
 
-                        # (1) 미체결 주문 취소
-                        if not isCancelSuccess:
-                            bot.future.cancel_all_orders(symbol)
-                            isCancelSuccess = True
+                        # total amount를 max_amount로 쪼개기
+                        total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                        max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                        # Set nGoal
+                        close_amount_list = []
+                        if (total_amount % max_amount < min_amount):
+                            nGoal = total_amount // max_amount
+                            for i in range(int(nGoal)):
+                                close_amount_list.append(max_amount)
+                        else:
+                            nGoal = total_amount // max_amount + 1
+                            for i in range(int(nGoal - 1)):
+                                close_amount_list.append(max_amount)
+                            close_amount_list.append(total_amount % max_amount)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
+                        isSettingFinish = True
 
-                        # (2) 청산 주문
-                        for i in range(int(nGoal-nComplete)):
-                            close_amount = close_amount_list[nComplete]
-                            if close_amount < min_amount:
-                                nComplete += 1
-                            else:
-                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                                nComplete += 1
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                    # (1) 미체결 주문 취소
+                    if not isCancelSuccess:
+                        bot.future.cancel_all_orders(symbol)
+                        isCancelSuccess = True
 
+                    # (2) 청산 주문
+                    for i in range(int(nGoal-nComplete)):
+                        close_amount = close_amount_list[nComplete]
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
+                # 4. 매매가 전부 종료된 후 매매종목 리스트 업데이트
+                if order_info.base in nearLong1_dic:
+                    nearLong1_dic.pop(order_info.base)
+                if order_info.base in nearLong2_dic:
+                    nearLong2_dic.pop(order_info.base)
+                if order_info.base in nearLong3_dic:
+                    nearLong3_dic.pop(order_info.base)
+                if order_info.base in nearLong4_dic:
+                    nearLong4_dic.pop(order_info.base)
+                if order_info.base in nearShort1_dic:
+                    nearShort1_dic.pop(order_info.base)
+                if order_info.base in nearShort2_dic:
+                    nearShort2_dic.pop(order_info.base)
+                if order_info.base in nearShort3_dic:
+                    nearShort3_dic.pop(order_info.base)
+                if order_info.base in nearShort4_dic:
+                    nearShort4_dic.pop(order_info.base)
 
-                        # 매매가 전부 종료된 후
-                        # 매매종목 리스트 업데이트
-                        if order_info.base in nearLong1_dic:
-                            nearLong1_dic.pop(order_info.base)
-                        if order_info.base in nearLong2_dic:
-                            nearLong2_dic.pop(order_info.base)
-                        if order_info.base in nearLong3_dic:
-                            nearLong3_dic.pop(order_info.base)
-                        if order_info.base in nearLong4_dic:
-                            nearLong4_dic.pop(order_info.base)
-                        if order_info.base in nearShort1_dic:
-                            nearShort1_dic.pop(order_info.base)
-                        if order_info.base in nearShort2_dic:
-                            nearShort2_dic.pop(order_info.base)
-                        if order_info.base in nearShort3_dic:
-                            nearShort3_dic.pop(order_info.base)
-                        if order_info.base in nearShort4_dic:
-                            nearShort4_dic.pop(order_info.base)
-
-                        if order_info.base in Long1_list:
-                            Long1_list.remove(order_info.base)
-                        if order_info.base in Long2_list:
-                            Long2_list.remove(order_info.base)
-                        if order_info.base in Long3_list:
-                            Long3_list.remove(order_info.base)
-                        if order_info.base in Long4_list:
-                            Long4_list.remove(order_info.base)
-                        if order_info.base in Short1_list:
-                            Short1_list.remove(order_info.base)
-                        if order_info.base in Short2_list:
-                            Short2_list.remove(order_info.base)
-                        if order_info.base in Short3_list:
-                            Short3_list.remove(order_info.base)
-                        if order_info.base in Short4_list:
-                            Short4_list.remove(order_info.base)
+                if order_info.base in Long1_list:
+                    Long1_list.remove(order_info.base)
+                if order_info.base in Long2_list:
+                    Long2_list.remove(order_info.base)
+                if order_info.base in Long3_list:
+                    Long3_list.remove(order_info.base)
+                if order_info.base in Long4_list:
+                    Long4_list.remove(order_info.base)
+                if order_info.base in Short1_list:
+                    Short1_list.remove(order_info.base)
+                if order_info.base in Short2_list:
+                    Short2_list.remove(order_info.base)
+                if order_info.base in Short3_list:
+                    Short3_list.remove(order_info.base)
+                if order_info.base in Short4_list:
+                    Short4_list.remove(order_info.base)
             
             if order_info.order_name in ignoreSignal_list:
                 return {"result" : "ignore"}
@@ -1150,7 +1164,10 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
     nComplete = 0
     isSettingFinish = False     # 매매전 ccxt 세팅 flag 
     orderID_list = []           # 오더id 리스트
-    isCancelSuccess = False        # 청산주문시 미체결주문 취소성공 여부
+    isCancelSuccess = False     # 미체결주문 취소성공 여부
+    amountCanceled = 0          # 주문 취소한 코인개수(NextCandle 로직에서 사용)
+    sideCanceled = ""           # 취소한 주문의 방향("buy" or "sell")
+
 
     # [Debug] 트뷰 시그널이 도착했다는 알람 발생
     background_tasks.add_task(log_recv_message, order_info)
@@ -1172,57 +1189,59 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                     return {"result" : "ignore"}
                 if order_info.side == "entry/sell" and (len(near_dic) >= nMaxShort or order_info.base in near_dic):
                     return {"result" : "ignore"}
-
-                # 2. 지정가 Entry 주문 (기존코드 재활용)
+                
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("entry/"):
-                        if order_info.stop_price and order_info.profit_price:
-                            pass
-                        else:
-                            ###################################
-                            # Entry 매매 코드
-                            ###################################
-                            if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                                symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                                side = bot.parse_side(order_info.side)
-                                quote = bot.parse_quote(order_info.quote)
-                                if order_info.leverage is not None:
-                                    bot.future.set_leverage(order_info.leverage, symbol)
-                                # total amount를 max_amount로 쪼개기
-                                total_amount = bot.get_amount_hatiko2(order_info.base, quote)
-                                max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                                min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                                # Set nGoal
-                                entry_amount_list = []
-                                if (total_amount % max_amount < min_amount):
-                                    nGoal = total_amount // max_amount
-                                    for i in range(int(nGoal)):
-                                        entry_amount_list.append(max_amount)
-                                else:
-                                    nGoal = total_amount // max_amount + 1
-                                    for i in range(int(nGoal - 1)):
-                                        entry_amount_list.append(max_amount)
-                                    entry_amount_list.append(total_amount % max_amount)
-                                # 진입 가격은 order_info로 넘겨받음
-                                entry_price = order_info.price
-                                isSettingFinish = True
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # 매매 주문
-                            for i in range(int(nGoal-nComplete)):
-                                entry_amount = entry_amount_list[nComplete]
-                                result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
-                                orderID_list.append(result['id'])
-                                nComplete += 1
-                                # 디스코드 로그생성
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                # 3. 지정가 Entry 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("entry/"):
+                    if order_info.stop_price and order_info.profit_price:
+                        pass
+                    else:
+                        ###################################
+                        # Entry 매매 코드
+                        ###################################
+                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                            side = bot.parse_side(order_info.side)
+                            quote = bot.parse_quote(order_info.quote)
+                            if order_info.leverage is not None:
+                                bot.future.set_leverage(order_info.leverage, symbol)
+                            # total amount를 max_amount로 쪼개기
+                            total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                            # Set nGoal
+                            entry_amount_list = []
+                            if (total_amount % max_amount < min_amount):
+                                nGoal = total_amount // max_amount
+                                for i in range(int(nGoal)):
+                                    entry_amount_list.append(max_amount)
+                            else:
+                                nGoal = total_amount // max_amount + 1
+                                for i in range(int(nGoal - 1)):
+                                    entry_amount_list.append(max_amount)
+                                entry_amount_list.append(total_amount % max_amount)
+                            # 진입 가격은 order_info로 넘겨받음
+                            entry_price = order_info.price
+                            isSettingFinish = True
 
-                            # 매매가 전부 종료되면
-                            # near리스트 업데이트
-                            near_dic[order_info.base] = orderID_list
+                        # 매매 주문
+                        for i in range(int(nGoal-nComplete)):
+                            entry_amount = entry_amount_list[nComplete]
+                            result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
+                            orderID_list.append(result['id'])
+                            nComplete += 1
+                            # 디스코드 로그생성
+                            background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. 매매가 전부 종료되면 near리스트 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in entrySignal_list:
                 # Long or Short 시그널 처리
@@ -1245,26 +1264,35 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                 if order_info.base not in near_dic or order_info.base in entry_list: 
                     return {"result" : "ignore"}
 
-                # 2. 미체결 주문 변경
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                    side = bot.parse_side(order_info.side)
-                    quote = bot.parse_quote(order_info.quote)
-
-                    # 주문 변경
-                    orderID_list_old = near_dic[order_info.base]
-                    for orderID in orderID_list_old:
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
+                
+                # 3. 미체결 주문 취소 & 재주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                
+                orderID_list_old = near_dic[order_info.base]
+                for orderID in orderID_list_old:
+                    # 미체결 주문 취소
+                    if not isCancelSuccess:
                         order = bot.future.fetch_order(orderID, symbol)
-                        result = bot.future.edit_order(orderID, symbol, "limit", order['side'], order['remaining'], order_info.price)
-                        orderID_list.append(result['id'])
-                        background_tasks.add_task(log, exchange_name, result, order_info)
-                    
-                    # near_dic 오더id 업데이트
-                    near_dic[order_info.base] = orderID_list
+                        resultCancel = bot.future.cancel_order(orderID, symbol)
+                        if resultCancel['status'] == 'canceled':
+                            amountCanceled = resultCancel['amount']
+                            sideCanceled = resultCancel['side']
+                            orderID_list_old.remove(orderID)
+                            isCancelSuccess = True
+                    # 재주문
+                    result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    orderID_list.append(result['id'])
+                    background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. near_dic 오더id 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in closeSignal_list:
                 # 청산 시그널 처리
@@ -1276,92 +1304,92 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                                            list(nearShort1_dic) + list(nearShort2_dic) + list(nearShort3_dic) + list(nearShort4_dic)):
                     return {"result" : "ignore"}
 
-                # 2. 청산 주문(기존 코드 재사용) & 미체결 주문 취소
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("close/"):
-                        #############################
-                        ## Close 매매코드
-                        #############################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                            side = bot.parse_side(order_info.side)
-                            quote = bot.parse_quote(order_info.quote)
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko2(order_info.base, quote)
-                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                            # Set nGoal
-                            close_amount_list = []
-                            if (total_amount % max_amount < min_amount):
-                                nGoal = total_amount // max_amount
-                                for i in range(int(nGoal)):
-                                    close_amount_list.append(max_amount)
-                            else:
-                                nGoal = total_amount // max_amount + 1
-                                for i in range(int(nGoal - 1)):
-                                    close_amount_list.append(max_amount)
-                                close_amount_list.append(total_amount % max_amount)
-                            # 트뷰에 나오는 청산 가격에 그대로 청산
-                            close_price = order_info.price
-                            isSettingFinish = True
+                # 3. 미체결 주문 취소 & 청산 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("close/"):
+                    #############################
+                    ## Close 매매코드
+                    #############################
+                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                        side = bot.parse_side(order_info.side)
+                        quote = bot.parse_quote(order_info.quote)
 
-                        # (1) 미체결 주문 취소
-                        if not isCancelSuccess:
-                            bot.future.cancel_all_orders(symbol)
-                            isCancelSuccess = True
+                        # total amount를 max_amount로 쪼개기
+                        total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                        max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                        # Set nGoal
+                        close_amount_list = []
+                        if (total_amount % max_amount < min_amount):
+                            nGoal = total_amount // max_amount
+                            for i in range(int(nGoal)):
+                                close_amount_list.append(max_amount)
+                        else:
+                            nGoal = total_amount // max_amount + 1
+                            for i in range(int(nGoal - 1)):
+                                close_amount_list.append(max_amount)
+                            close_amount_list.append(total_amount % max_amount)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
+                        isSettingFinish = True
 
-                        # (2) 청산 주문
-                        for i in range(int(nGoal-nComplete)):
-                            close_amount = close_amount_list[nComplete]
-                            if close_amount < min_amount:
-                                nComplete += 1
-                            else:
-                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                                nComplete += 1
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                    # (1) 미체결 주문 취소
+                    if not isCancelSuccess:
+                        bot.future.cancel_all_orders(symbol)
+                        isCancelSuccess = True
 
+                    # (2) 청산 주문
+                    for i in range(int(nGoal-nComplete)):
+                        close_amount = close_amount_list[nComplete]
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
+                # 4. 매매가 전부 종료된 후 매매종목 리스트 업데이트
+                if order_info.base in nearLong1_dic:
+                    nearLong1_dic.pop(order_info.base)
+                if order_info.base in nearLong2_dic:
+                    nearLong2_dic.pop(order_info.base)
+                if order_info.base in nearLong3_dic:
+                    nearLong3_dic.pop(order_info.base)
+                if order_info.base in nearLong4_dic:
+                    nearLong4_dic.pop(order_info.base)
+                if order_info.base in nearShort1_dic:
+                    nearShort1_dic.pop(order_info.base)
+                if order_info.base in nearShort2_dic:
+                    nearShort2_dic.pop(order_info.base)
+                if order_info.base in nearShort3_dic:
+                    nearShort3_dic.pop(order_info.base)
+                if order_info.base in nearShort4_dic:
+                    nearShort4_dic.pop(order_info.base)
 
-                        # 매매가 전부 종료된 후
-                        # 매매종목 리스트 업데이트
-                        if order_info.base in nearLong1_dic:
-                            nearLong1_dic.pop(order_info.base)
-                        if order_info.base in nearLong2_dic:
-                            nearLong2_dic.pop(order_info.base)
-                        if order_info.base in nearLong3_dic:
-                            nearLong3_dic.pop(order_info.base)
-                        if order_info.base in nearLong4_dic:
-                            nearLong4_dic.pop(order_info.base)
-                        if order_info.base in nearShort1_dic:
-                            nearShort1_dic.pop(order_info.base)
-                        if order_info.base in nearShort2_dic:
-                            nearShort2_dic.pop(order_info.base)
-                        if order_info.base in nearShort3_dic:
-                            nearShort3_dic.pop(order_info.base)
-                        if order_info.base in nearShort4_dic:
-                            nearShort4_dic.pop(order_info.base)
-
-                        if order_info.base in Long1_list:
-                            Long1_list.remove(order_info.base)
-                        if order_info.base in Long2_list:
-                            Long2_list.remove(order_info.base)
-                        if order_info.base in Long3_list:
-                            Long3_list.remove(order_info.base)
-                        if order_info.base in Long4_list:
-                            Long4_list.remove(order_info.base)
-                        if order_info.base in Short1_list:
-                            Short1_list.remove(order_info.base)
-                        if order_info.base in Short2_list:
-                            Short2_list.remove(order_info.base)
-                        if order_info.base in Short3_list:
-                            Short3_list.remove(order_info.base)
-                        if order_info.base in Short4_list:
-                            Short4_list.remove(order_info.base)
+                if order_info.base in Long1_list:
+                    Long1_list.remove(order_info.base)
+                if order_info.base in Long2_list:
+                    Long2_list.remove(order_info.base)
+                if order_info.base in Long3_list:
+                    Long3_list.remove(order_info.base)
+                if order_info.base in Long4_list:
+                    Long4_list.remove(order_info.base)
+                if order_info.base in Short1_list:
+                    Short1_list.remove(order_info.base)
+                if order_info.base in Short2_list:
+                    Short2_list.remove(order_info.base)
+                if order_info.base in Short3_list:
+                    Short3_list.remove(order_info.base)
+                if order_info.base in Short4_list:
+                    Short4_list.remove(order_info.base)
             
             if order_info.order_name in ignoreSignal_list:
                 return {"result" : "ignore"}
@@ -1424,7 +1452,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
 
 
     # 종목개수 선정
-    nMaxLong = 4    # 최대 2종목 몰빵투자
+    nMaxLong = 4    # 최대 4종목 몰빵투자
     nMaxShort = 1   # 최대 1종목 몰빵투자
 
     # 초기화 단계
@@ -1433,7 +1461,10 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
     nComplete = 0
     isSettingFinish = False     # 매매전 ccxt 세팅 flag 
     orderID_list = []           # 오더id 리스트
-    isCancelSuccess = False        # 청산주문시 미체결주문 취소성공 여부
+    isCancelSuccess = False     # 미체결주문 취소성공 여부
+    amountCanceled = 0          # 주문 취소한 코인개수(NextCandle 로직에서 사용)
+    sideCanceled = ""           # 취소한 주문의 방향("buy" or "sell")
+
 
     # [Debug] 트뷰 시그널이 도착했다는 알람 발생
     background_tasks.add_task(log_recv_message, order_info)
@@ -1455,57 +1486,59 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                     return {"result" : "ignore"}
                 if order_info.side == "entry/sell" and (len(near_dic) >= nMaxShort or order_info.base in near_dic):
                     return {"result" : "ignore"}
-
-                # 2. 지정가 Entry 주문 (기존코드 재활용)
+                
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("entry/"):
-                        if order_info.stop_price and order_info.profit_price:
-                            pass
-                        else:
-                            ###################################
-                            # Entry 매매 코드
-                            ###################################
-                            if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                                symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                                side = bot.parse_side(order_info.side)
-                                quote = bot.parse_quote(order_info.quote)
-                                if order_info.leverage is not None:
-                                    bot.future.set_leverage(order_info.leverage, symbol)
-                                # total amount를 max_amount로 쪼개기
-                                total_amount = bot.get_amount_hatiko4(order_info.base, quote)
-                                max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                                min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                                # Set nGoal
-                                entry_amount_list = []
-                                if (total_amount % max_amount < min_amount):
-                                    nGoal = total_amount // max_amount
-                                    for i in range(int(nGoal)):
-                                        entry_amount_list.append(max_amount)
-                                else:
-                                    nGoal = total_amount // max_amount + 1
-                                    for i in range(int(nGoal - 1)):
-                                        entry_amount_list.append(max_amount)
-                                    entry_amount_list.append(total_amount % max_amount)
-                                # 진입 가격은 order_info로 넘겨받음
-                                entry_price = order_info.price
-                                isSettingFinish = True
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # 매매 주문
-                            for i in range(int(nGoal-nComplete)):
-                                entry_amount = entry_amount_list[nComplete]
-                                result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
-                                orderID_list.append(result['id'])
-                                nComplete += 1
-                                # 디스코드 로그생성
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                # 3. 지정가 Entry 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("entry/"):
+                    if order_info.stop_price and order_info.profit_price:
+                        pass
+                    else:
+                        ###################################
+                        # Entry 매매 코드
+                        ###################################
+                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                            side = bot.parse_side(order_info.side)
+                            quote = bot.parse_quote(order_info.quote)
+                            if order_info.leverage is not None:
+                                bot.future.set_leverage(order_info.leverage, symbol)
+                            # total amount를 max_amount로 쪼개기
+                            total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                            # Set nGoal
+                            entry_amount_list = []
+                            if (total_amount % max_amount < min_amount):
+                                nGoal = total_amount // max_amount
+                                for i in range(int(nGoal)):
+                                    entry_amount_list.append(max_amount)
+                            else:
+                                nGoal = total_amount // max_amount + 1
+                                for i in range(int(nGoal - 1)):
+                                    entry_amount_list.append(max_amount)
+                                entry_amount_list.append(total_amount % max_amount)
+                            # 진입 가격은 order_info로 넘겨받음
+                            entry_price = order_info.price
+                            isSettingFinish = True
 
-                            # 매매가 전부 종료되면
-                            # near리스트 업데이트
-                            near_dic[order_info.base] = orderID_list
+                        # 매매 주문
+                        for i in range(int(nGoal-nComplete)):
+                            entry_amount = entry_amount_list[nComplete]
+                            result = bot.future.create_order(symbol, "limit", side, abs(entry_amount), entry_price)
+                            orderID_list.append(result['id'])
+                            nComplete += 1
+                            # 디스코드 로그생성
+                            background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. 매매가 전부 종료되면 near리스트 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in entrySignal_list:
                 # Long or Short 시그널 처리
@@ -1528,26 +1561,35 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                 if order_info.base not in near_dic or order_info.base in entry_list: 
                     return {"result" : "ignore"}
 
-                # 2. 미체결 주문 변경
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                    side = bot.parse_side(order_info.side)
-                    quote = bot.parse_quote(order_info.quote)
-
-                    # 주문 변경
-                    orderID_list_old = near_dic[order_info.base]
-                    for orderID in orderID_list_old:
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
+                
+                # 3. 미체결 주문 취소 & 재주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                
+                orderID_list_old = near_dic[order_info.base]
+                for orderID in orderID_list_old:
+                    # 미체결 주문 취소
+                    if not isCancelSuccess:
                         order = bot.future.fetch_order(orderID, symbol)
-                        result = bot.future.edit_order(orderID, symbol, "limit", order['side'], order['remaining'], order_info.price)
-                        orderID_list.append(result['id'])
-                        background_tasks.add_task(log, exchange_name, result, order_info)
-                    
-                    # near_dic 오더id 업데이트
-                    near_dic[order_info.base] = orderID_list
+                        resultCancel = bot.future.cancel_order(orderID, symbol)
+                        if resultCancel['status'] == 'canceled':
+                            amountCanceled = resultCancel['amount']
+                            sideCanceled = resultCancel['side']
+                            orderID_list_old.remove(orderID)
+                            isCancelSuccess = True
+                    # 재주문
+                    result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
+                    orderID_list.append(result['id'])
+                    background_tasks.add_task(log, exchange_name, result, order_info)
+
+                # 4. near_dic 오더id 업데이트
+                near_dic[order_info.base] = orderID_list
 
             if order_info.order_name in closeSignal_list:
                 # 청산 시그널 처리
@@ -1559,91 +1601,92 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                                            list(nearShort1_dic) + list(nearShort2_dic) + list(nearShort3_dic) + list(nearShort4_dic)):
                     return {"result" : "ignore"}
 
-                # 2. 청산 주문(기존 코드 재사용) & 미체결 주문 취소
+                # 2. 거래소 이름 확인
                 exchange_name = order_info.exchange.upper()
                 exchange = get_exchange(exchange_name, order_info.kis_number)
-                if exchange_name in ("BINANCE"):    # Binance Only
-                    bot = exchange.dict()[order_info.exchange]
-                    bot.order_info = order_info
-                    if order_info.side.startswith("close/"):
-                        #############################
-                        ## Close 매매코드
-                        #############################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
-                            symbol = bot.parse_symbol(order_info.base, order_info.quote)
-                            side = bot.parse_side(order_info.side)
-                            quote = bot.parse_quote(order_info.quote)
+                if exchange_name != "BINANCE":    # Binance Only
+                    return {"result" : "ignore"}
 
-                            # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko4(order_info.base, quote)
-                            max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
-                            min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
-                            # Set nGoal
-                            close_amount_list = []
-                            if (total_amount % max_amount < min_amount):
-                                nGoal = total_amount // max_amount
-                                for i in range(int(nGoal)):
-                                    close_amount_list.append(max_amount)
-                            else:
-                                nGoal = total_amount // max_amount + 1
-                                for i in range(int(nGoal - 1)):
-                                    close_amount_list.append(max_amount)
-                                close_amount_list.append(total_amount % max_amount)
-                            # 트뷰에 나오는 청산 가격에 그대로 청산
-                            close_price = order_info.price
-                            isSettingFinish = True
+                # 3. 미체결 주문 취소 & 청산 주문
+                bot = exchange.dict()[order_info.exchange]
+                bot.order_info = order_info
+                if order_info.side.startswith("close/"):
+                    #############################
+                    ## Close 매매코드
+                    #############################
+                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        symbol = bot.parse_symbol(order_info.base, order_info.quote)
+                        side = bot.parse_side(order_info.side)
+                        quote = bot.parse_quote(order_info.quote)
 
-                        # (1) 미체결 주문 취소
-                        if not isCancelSuccess:
-                            bot.future.cancel_all_orders(symbol)
-                            isCancelSuccess = True
+                        # total amount를 max_amount로 쪼개기
+                        total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                        max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
+                        min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
+                        # Set nGoal
+                        close_amount_list = []
+                        if (total_amount % max_amount < min_amount):
+                            nGoal = total_amount // max_amount
+                            for i in range(int(nGoal)):
+                                close_amount_list.append(max_amount)
+                        else:
+                            nGoal = total_amount // max_amount + 1
+                            for i in range(int(nGoal - 1)):
+                                close_amount_list.append(max_amount)
+                            close_amount_list.append(total_amount % max_amount)
+                        # 트뷰에 나오는 청산 가격에 그대로 청산
+                        close_price = order_info.price
+                        isSettingFinish = True
 
-                        # (2) 청산 주문
-                        for i in range(int(nGoal-nComplete)):
-                            close_amount = close_amount_list[nComplete]
-                            if close_amount < min_amount:
-                                nComplete += 1
-                            else:
-                                result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
-                                nComplete += 1
-                                background_tasks.add_task(log, exchange_name, result, order_info)
+                    # (1) 미체결 주문 취소
+                    if not isCancelSuccess:
+                        bot.future.cancel_all_orders(symbol)
+                        isCancelSuccess = True
 
+                    # (2) 청산 주문
+                    for i in range(int(nGoal-nComplete)):
+                        close_amount = close_amount_list[nComplete]
+                        if close_amount < min_amount:
+                            nComplete += 1
+                        else:
+                            result = bot.future.create_order(symbol, "limit", side, close_amount, close_price, params={"reduceOnly": True})
+                            nComplete += 1
+                            background_tasks.add_task(log, exchange_name, result, order_info)
 
-                        # 매매가 전부 종료된 후
-                        # 매매종목 리스트 업데이트
-                        if order_info.base in nearLong1_dic:
-                            nearLong1_dic.pop(order_info.base)
-                        if order_info.base in nearLong2_dic:
-                            nearLong2_dic.pop(order_info.base)
-                        if order_info.base in nearLong3_dic:
-                            nearLong3_dic.pop(order_info.base)
-                        if order_info.base in nearLong4_dic:
-                            nearLong4_dic.pop(order_info.base)
-                        if order_info.base in nearShort1_dic:
-                            nearShort1_dic.pop(order_info.base)
-                        if order_info.base in nearShort2_dic:
-                            nearShort2_dic.pop(order_info.base)
-                        if order_info.base in nearShort3_dic:
-                            nearShort3_dic.pop(order_info.base)
-                        if order_info.base in nearShort4_dic:
-                            nearShort4_dic.pop(order_info.base)
+                # 4. 매매가 전부 종료된 후 매매종목 리스트 업데이트
+                if order_info.base in nearLong1_dic:
+                    nearLong1_dic.pop(order_info.base)
+                if order_info.base in nearLong2_dic:
+                    nearLong2_dic.pop(order_info.base)
+                if order_info.base in nearLong3_dic:
+                    nearLong3_dic.pop(order_info.base)
+                if order_info.base in nearLong4_dic:
+                    nearLong4_dic.pop(order_info.base)
+                if order_info.base in nearShort1_dic:
+                    nearShort1_dic.pop(order_info.base)
+                if order_info.base in nearShort2_dic:
+                    nearShort2_dic.pop(order_info.base)
+                if order_info.base in nearShort3_dic:
+                    nearShort3_dic.pop(order_info.base)
+                if order_info.base in nearShort4_dic:
+                    nearShort4_dic.pop(order_info.base)
 
-                        if order_info.base in Long1_list:
-                            Long1_list.remove(order_info.base)
-                        if order_info.base in Long2_list:
-                            Long2_list.remove(order_info.base)
-                        if order_info.base in Long3_list:
-                            Long3_list.remove(order_info.base)
-                        if order_info.base in Long4_list:
-                            Long4_list.remove(order_info.base)
-                        if order_info.base in Short1_list:
-                            Short1_list.remove(order_info.base)
-                        if order_info.base in Short2_list:
-                            Short2_list.remove(order_info.base)
-                        if order_info.base in Short3_list:
-                            Short3_list.remove(order_info.base)
-                        if order_info.base in Short4_list:
-                            Short4_list.remove(order_info.base)
+                if order_info.base in Long1_list:
+                    Long1_list.remove(order_info.base)
+                if order_info.base in Long2_list:
+                    Long2_list.remove(order_info.base)
+                if order_info.base in Long3_list:
+                    Long3_list.remove(order_info.base)
+                if order_info.base in Long4_list:
+                    Long4_list.remove(order_info.base)
+                if order_info.base in Short1_list:
+                    Short1_list.remove(order_info.base)
+                if order_info.base in Short2_list:
+                    Short2_list.remove(order_info.base)
+                if order_info.base in Short3_list:
+                    Short3_list.remove(order_info.base)
+                if order_info.base in Short4_list:
+                    Short4_list.remove(order_info.base)
             
             if order_info.order_name in ignoreSignal_list:
                 return {"result" : "ignore"}
