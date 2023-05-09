@@ -909,7 +909,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                         ###################################
                         # Entry 매매 코드
                         ###################################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        if not isSettingFinish:   # 초기 세팅
                             symbol = bot.parse_symbol(order_info.base, order_info.quote)
                             side = bot.parse_side(order_info.side)
                             quote = bot.parse_quote(order_info.quote)
@@ -987,11 +987,11 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
                             sideCanceled = resultCancel['side']
-                            orderID_list_old.remove(orderID)
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
                     isCancelSuccess = False
+                    orderID_list_old.remove(orderID)
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1021,7 +1021,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                     #############################
                     ## Close 매매코드
                     #############################
-                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                    if not isSettingFinish:   # 초기 세팅
                         symbol = bot.parse_symbol(order_info.base, order_info.quote)
                         side = bot.parse_side(order_info.side)
                         quote = bot.parse_quote(order_info.quote)
@@ -1207,7 +1207,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                         ###################################
                         # Entry 매매 코드
                         ###################################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        if not isSettingFinish:   # 초기 세팅
                             symbol = bot.parse_symbol(order_info.base, order_info.quote)
                             side = bot.parse_side(order_info.side)
                             quote = bot.parse_quote(order_info.quote)
@@ -1285,11 +1285,11 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
                             sideCanceled = resultCancel['side']
-                            orderID_list_old.remove(orderID)
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
                     isCancelSuccess = False
+                    orderID_list_old.remove(orderID)
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1319,7 +1319,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                     #############################
                     ## Close 매매코드
                     #############################
-                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                    if not isSettingFinish:   # 초기 세팅
                         symbol = bot.parse_symbol(order_info.base, order_info.quote)
                         side = bot.parse_side(order_info.side)
                         quote = bot.parse_quote(order_info.quote)
@@ -1505,7 +1505,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                         ###################################
                         # Entry 매매 코드
                         ###################################
-                        if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                        if not isSettingFinish:   # 초기 세팅
                             symbol = bot.parse_symbol(order_info.base, order_info.quote)
                             side = bot.parse_side(order_info.side)
                             quote = bot.parse_quote(order_info.quote)
@@ -1583,11 +1583,11 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
                             sideCanceled = resultCancel['side']
-                            orderID_list_old.remove(orderID)
                             isCancelSuccess = True
                     # 재주문
                     result = bot.future.create_order(symbol, "limit", sideCanceled, amountCanceled, order_info.price)
                     isCancelSuccess = False
+                    orderID_list_old.remove(orderID)
                     orderID_list.append(result['id'])
                     background_tasks.add_task(log, exchange_name, result, order_info)
 
@@ -1617,7 +1617,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                     #############################
                     ## Close 매매코드
                     #############################
-                    if nTry == 0 and not isSettingFinish:   # 초기 세팅
+                    if not isSettingFinish:   # 초기 세팅
                         symbol = bot.parse_symbol(order_info.base, order_info.quote)
                         side = bot.parse_side(order_info.side)
                         quote = bot.parse_quote(order_info.quote)
