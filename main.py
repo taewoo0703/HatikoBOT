@@ -282,7 +282,7 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -350,7 +350,7 @@ async def hatiko(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -415,7 +415,7 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
     Long 시그널은 2 종목까지 분산투자를 하고, Short 시그널은 단일 몰빵투자를 한다.
     [기존 /hatiko 대비 변경내역]
     1. 매수종목을 리스트로 관리함. 리스트에 최대개수 이상 들어오는 시그널은 무시. 혹시 같은 종목에서 Long1 시그널 중복 발생시 후속타 무시
-    2. bot.get_amount() 대신 bot.get_amount_hatiko2()를 씀. 트뷰와 무관하게 그냥 전체 자금 기준 8분할하는 방식으로 매매 수량을 정함.(청산당할MDD보정 포함되어 있음)
+    2. bot.get_amount() 대신 bot.get_amount_hatiko()를 씀. 트뷰와 무관하게 그냥 전체 자금 기준 8분할하는 방식으로 매매 수량을 정함.(청산당할MDD보정 포함되어 있음)
     """
     global baseLong1_list, baseLong2_list, baseLong3_list, baseLong4_list
     global baseShort1_list, baseShort2_list, baseShort3_list, baseShort4_list
@@ -484,7 +484,7 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -552,7 +552,7 @@ async def hatiko2(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -617,7 +617,7 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
     Long 시그널은 4 종목까지 분산투자를 하고, Short 시그널은 단일 몰빵투자를 한다.
     [기존 /hatiko 대비 변경내역]
     1. 매수종목을 리스트로 관리함. 리스트에 최대개수 이상 들어오는 시그널은 무시. 혹시 같은 종목에서 Long1 시그널 중복 발생시 후속타 무시
-    2. bot.get_amount() 대신 bot.get_amount_hatiko4()를 씀. 트뷰와 무관하게 그냥 전체 자금 기준 16분할하는 방식으로 매매 수량을 정함.(청산당할MDD보정 포함되어 있음)
+    2. bot.get_amount() 대신 bot.get_amount_hatiko()를 씀. 트뷰와 무관하게 그냥 전체 자금 기준 16분할하는 방식으로 매매 수량을 정함.(청산당할MDD보정 포함되어 있음)
     """
     global baseLong1_list, baseLong2_list, baseLong3_list, baseLong4_list
     global baseShort1_list, baseShort2_list, baseShort3_list, baseShort4_list
@@ -686,7 +686,7 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -754,7 +754,7 @@ async def hatiko4(order_info: MarketOrder, background_tasks: BackgroundTasks):
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -916,7 +916,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -982,7 +982,6 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                 for orderID in orderID_list_old:
                     # 미체결 주문 취소
                     if not isCancelSuccess:
-                        order = bot.future.fetch_order(orderID, symbol)
                         resultCancel = bot.future.cancel_order(orderID, symbol)
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
@@ -1027,7 +1026,7 @@ async def hatikolimit(order_info: MarketOrder, background_tasks: BackgroundTasks
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko1(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -1214,7 +1213,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -1280,7 +1279,6 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                 for orderID in orderID_list_old:
                     # 미체결 주문 취소
                     if not isCancelSuccess:
-                        order = bot.future.fetch_order(orderID, symbol)
                         resultCancel = bot.future.cancel_order(orderID, symbol)
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
@@ -1325,7 +1323,7 @@ async def hatikolimit2(order_info: MarketOrder, background_tasks: BackgroundTask
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko2(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -1512,7 +1510,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                             if order_info.leverage is not None:
                                 bot.future.set_leverage(order_info.leverage, symbol)
                             # total amount를 max_amount로 쪼개기
-                            total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                            total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                             max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                             min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                             # Set nGoal
@@ -1578,7 +1576,6 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                 for orderID in orderID_list_old:
                     # 미체결 주문 취소
                     if not isCancelSuccess:
-                        order = bot.future.fetch_order(orderID, symbol)
                         resultCancel = bot.future.cancel_order(orderID, symbol)
                         if resultCancel['status'] == 'canceled':
                             amountCanceled = resultCancel['amount']
@@ -1623,7 +1620,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                         quote = bot.parse_quote(order_info.quote)
 
                         # total amount를 max_amount로 쪼개기
-                        total_amount = bot.get_amount_hatiko4(order_info.base, quote)
+                        total_amount = bot.get_amount_hatiko(order_info.base, quote, nMaxLong, nMaxShort)
                         max_amount = bot.future_markets[symbol]["limits"]["amount"]["max"] # 지정가 주문 최대 코인개수
                         min_amount = bot.future_markets[symbol]["limits"]["amount"]["min"]
                         # Set nGoal
@@ -1690,7 +1687,7 @@ async def hatikolimit4(order_info: MarketOrder, background_tasks: BackgroundTask
                     Short3_list.remove(order_info.base)
                 if order_info.base in Short4_list:
                     Short4_list.remove(order_info.base)
-            
+
             if order_info.order_name in ignoreSignal_list:
                 return {"result" : "ignore"}
             
