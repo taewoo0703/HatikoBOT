@@ -492,10 +492,13 @@ def hatikolimitBase(order_info: MarketOrder, background_tasks: BackgroundTasks, 
     isCancelSuccess = False     # 미체결주문 취소성공 여부
     amountCanceled = 0          # 주문 취소한 코인개수(NextCandle 로직에서 사용)
     sideCanceled = ""           # 취소한 주문의 방향("buy" or "sell")
+    isSendSignalDiscord = False # 트뷰 시그널이 도착했다는 알람 전송 여부
 
 
     # [Debug] 트뷰 시그널이 도착했다는 알람 발생
-    background_tasks.add_task(log_recv_message, order_info)
+    # if not isSendSignalDiscord:
+    #     background_tasks.add_task(log_recv_message, order_info)
+    #     isSendSignalDiscord = True
 
     # nMaxTry 횟수만큼 자동매매 시도
     for nTry in range(nMaxTry):
@@ -577,6 +580,12 @@ def hatikolimitBase(order_info: MarketOrder, background_tasks: BackgroundTasks, 
                 entry_list = matchEntryList(order_info.order_name)
                 if order_info.base in near_dic:
                     entry_list.append(order_info.base)
+                    
+                    # [Debug] 트뷰 시그널이 도착했다는 알람 발생
+                    # (해당 시그널은 주문을 발생시키지 않기 때문에 별도의 디스코드 전송함)
+                    if not isSendSignalDiscord:
+                        background_tasks.add_task(log_recv_message, order_info)
+                        isSendSignalDiscord = True
 
             if order_info.order_name in nextSignal_list:
                 # NextCandle 시그널 처리
