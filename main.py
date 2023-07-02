@@ -644,6 +644,12 @@ def hatikolimitBase(order_info: MarketOrder, background_tasks: BackgroundTasks, 
                 if exchange_name != "BINANCE":    # Binance Only
                     return {"result" : "ignore"}
 
+                # [Debug] 트뷰 시그널이 도착했다는 알람 발생
+                # (미체결 주문만 취소하는 경우 따로 알람이 발생하지 않기 때문에 알람 발생)
+                if not isSendSignalDiscord:
+                    background_tasks.add_task(log_recv_message, order_info)
+                    isSendSignalDiscord = True
+
                 # 3. 미체결 주문 취소 & 청산 주문
                 bot = exchange.dict()[order_info.exchange]
                 bot.order_info = order_info
